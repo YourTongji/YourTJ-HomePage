@@ -89,7 +89,7 @@ export const useTheme = () => {
     // Fallback: fade an overlay (covers potential jank during lots of color transitions).
     if (!prefersReducedMotion && document.body) {
       const overlay = document.createElement('div');
-      const bg = getComputedStyle(document.body).backgroundColor;
+      const bg = getComputedStyle(document.documentElement).backgroundColor;
       overlay.style.position = 'fixed';
       overlay.style.inset = '0';
       overlay.style.background = bg;

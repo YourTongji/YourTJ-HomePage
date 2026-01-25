@@ -9,8 +9,11 @@
     transition: none !important;
   }
 
-  html.vt::view-transition-old(root) {
-    animation: none;
+  html.vt::view-transition-old(root),
+  html.vt::view-transition-new(root) {
+    animation: none !important;
+    opacity: 1;
+    mix-blend-mode: normal;
   }
 
   html.vt::view-transition-new(root) {
@@ -22,12 +25,6 @@
     to {
       clip-path: circle(var(--vt-r, 100vmax) at var(--vt-x, 50vw) var(--vt-y, 50vh));
     }
-  }
-
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 280ms;
-    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
   }
 
   html {
