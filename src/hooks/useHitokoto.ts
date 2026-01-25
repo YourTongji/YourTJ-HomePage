@@ -27,7 +27,12 @@ export const useHitokoto = () => {
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), 2500);
 
-        const response = await fetch('https://v1.hitokoto.cn/', {
+        // 句子类型限制：动画(a)、文学(d)、诗词(i)、哲学(k)
+        // 文档：https://developer.hitokoto.cn/sentence/
+        const params = new URLSearchParams();
+        for (const c of ['a', 'd', 'i', 'k']) params.append('c', c);
+
+        const response = await fetch(`https://v1.hitokoto.cn/?${params.toString()}`, {
           signal: controller.signal,
         });
 

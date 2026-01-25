@@ -38,7 +38,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Nunito', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        hand: ['Gochi Hand', 'cursive'],
+        hand: ['Zhi Mang Xing', 'Gochi Hand', 'cursive'],
       },
       backgroundImage: {
         'paper-pattern':
@@ -101,4 +101,3 @@ module.exports = {
     },
   },
 };
-
