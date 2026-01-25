@@ -87,8 +87,10 @@ export const useHitokoto = () => {
 
     const fetchHitokoto = async () => {
       try {
-        const controller = new AbortController();
-        const abortId = window.setTimeout(() => controller.abort(), 3500);
+        const timeoutMs = 3500;
+        const canAbort = typeof (window as any).AbortController === 'function';
+        const controller = canAbort ? new AbortController() : null;
+        const abortId = window.setTimeout(() => controller?.abort(), timeoutMs);
 
         // Filter sentence types per docs:
         // a = animation, d = literature, i = poetry, k = philosophy
@@ -97,7 +99,8 @@ export const useHitokoto = () => {
         for (const c of ['a', 'd', 'i', 'k']) params.append('c', c);
 
         const response = await fetch(`https://v1.hitokoto.cn/?${params.toString()}`, {
-          signal: controller.signal,
+          ...(controller ? { signal: controller.signal } : {}),
+          cache: 'no-store',
         });
         window.clearTimeout(abortId);
 

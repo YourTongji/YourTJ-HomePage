@@ -40,7 +40,8 @@ module.exports = {
         sans: ['Nunito', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         // Keep the original global "hand" look; only Hitokoto uses a more artistic handwriting.
         hand: ['Gochi Hand', 'cursive'],
-        hitokoto: ['Zhi Mang Xing', 'Gochi Hand', 'cursive'],
+        // Prefer system calligraphy fonts on mobile (faster and more reliable than remote font loading).
+        hitokoto: ['KaiTi', 'Kaiti SC', 'STKaiti', 'DFKai-SB', 'Gochi Hand', 'cursive'],
       },
       backgroundImage: {
         'paper-pattern':
@@ -80,23 +81,23 @@ module.exports = {
           '100%': { transform: 'rotate(-360deg)' },
         },
         fadeIn: {
-          '0%': { opacity: '0' },
+          '0%': { opacity: '0.92' },
           '100%': { opacity: '1' },
         },
         fadeInUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '0%': { opacity: '0.92', transform: 'translateY(14px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.9)' },
+          '0%': { opacity: '0.92', transform: 'scale(0.97)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
         slideInLeft: {
-          '0%': { opacity: '0', transform: 'translateX(-30px)' },
+          '0%': { opacity: '0.92', transform: 'translateX(-18px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         slideInRight: {
-          '0%': { opacity: '0', transform: 'translateX(30px)' },
+          '0%': { opacity: '0.92', transform: 'translateX(18px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
