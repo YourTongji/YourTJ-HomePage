@@ -40,8 +40,7 @@ export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      aria-labelledby={titleId}
-      aria-describedby={descId}
+      aria-labelledby={`${titleId} ${descId}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseDown={() => setIsPressed(true)}
@@ -154,4 +153,3 @@ export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
     </a>
   );
 };
-
