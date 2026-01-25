@@ -16,7 +16,7 @@ interface HitokotoData {
 }
 
 const DEFAULT_HITOKOTO = 'Connecting your campus life with simplicity and warmth.';
-const CACHE_KEY = 'hitokoto_cache_v1';
+const CACHE_KEY = 'hitokoto_cache_v2';
 const CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12h
 
 type HitokotoCache = {
@@ -29,7 +29,7 @@ function buildSource(from: string, fromWho: string | null): string {
   const f = (from || '').trim();
   const w = (fromWho || '').trim();
 
-  // Use 《...》 via escapes to keep the source file ASCII-only.
+  // Use Unicode escapes for book-title quotes to keep the source file ASCII-only.
   const l = '\u300a';
   const r = '\u300b';
   if (w && f) return `-- ${w}${l}${f}${r}`;
@@ -79,8 +79,10 @@ export const useHitokoto = () => {
     const cached = readCache();
     const cacheFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
 
-    // Keep LCP stable: don't fetch on cold load, don't fetch on Save-Data/2g, and don't refetch if cache is fresh.
-    if (cacheFresh || shouldSkipForConnection()) return;
+    // Keep LCP stable: don't refetch if cache is fresh.
+    // If the user is on Save-Data/2g and we already have a cached quote, prefer not fetching.
+    if (cacheFresh) return;
+    if (shouldSkipForConnection() && cached) return;
 
     let cancelled = false;
     let timeoutId: number | undefined;
@@ -139,17 +141,13 @@ export const useHitokoto = () => {
       }, 2500);
     };
 
-    if (document.readyState === 'complete') {
-      schedule();
-    } else {
-      window.addEventListener('load', schedule, { once: true });
-    }
+    // Avoid relying on the window 'load' event (can be delayed/odd on some mobile browsers).
+    schedule();
 
     return () => {
       cancelled = true;
       if (typeof timeoutId === 'number') window.clearTimeout(timeoutId);
       if (typeof idleId === 'number') cancelIdleCallback?.(idleId);
-      window.removeEventListener('load', schedule);
     };
   }, []);
 

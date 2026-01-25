@@ -3,6 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+  html.vt *,
+  html.vt *::before,
+  html.vt *::after {
+    transition: none !important;
+  }
+
+  html.vt::view-transition-old(root) {
+    animation: none;
+  }
+
+  html.vt::view-transition-new(root) {
+    animation: vt-reveal 280ms cubic-bezier(0.2, 0, 0, 1);
+    clip-path: circle(0px at var(--vt-x, 50vw) var(--vt-y, 50vh));
+  }
+
+  @keyframes vt-reveal {
+    to {
+      clip-path: circle(var(--vt-r, 100vmax) at var(--vt-x, 50vw) var(--vt-y, 50vh));
+    }
+  }
+
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 280ms;

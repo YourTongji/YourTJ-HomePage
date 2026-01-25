@@ -5,7 +5,7 @@ import { useHitokoto } from '../hooks/useHitokoto';
 
 interface HeaderProps {
   theme: Theme;
-  toggleTheme: () => void;
+  toggleTheme: (point?: { clientX: number; clientY: number }) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
 
       {/* Theme Toggle Button - Hand-drawn style */}
       <button
-        onClick={toggleTheme}
+        onClick={(e) => toggleTheme({ clientX: e.clientX, clientY: e.clientY })}
         aria-label={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
         className="absolute top-0 right-0 md:right-4 group p-3 rounded-full bg-white dark:bg-wabi-dark-subtle border-2 border-stone-200 dark:border-wabi-dark-stone hover:border-goose-blue-400 dark:hover:border-goose-blue-500 transition-all duration-300 hover:scale-110 hover:rotate-12 active:scale-95 shadow-sm hover:shadow-md z-20"
       >
