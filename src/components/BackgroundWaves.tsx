@@ -4,18 +4,22 @@ export const BackgroundWaves: React.FC = () => {
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-wabi-paper dark:bg-wabi-dark-paper transition-colors duration-500">
       {/* Paper Texture Overlay */}
-      <div className="absolute inset-0 z-[1] bg-paper-pattern opacity-60 dark:opacity-40 mix-blend-multiply dark:mix-blend-overlay pointer-events-none transition-opacity duration-500"></div>
+      <div className="absolute inset-0 z-[1] bg-paper-pattern opacity-60 dark:opacity-40 md:mix-blend-multiply dark:md:mix-blend-overlay pointer-events-none transition-opacity duration-500"></div>
 
       {/* Organic Watercolor Blobs (Biophilic/Soft) */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         {/* Top Right - Soft Goose Blue */}
-        <div className="absolute -top-[10%] -right-[10%] w-[45rem] h-[45rem] bg-goose-blue-200/30 dark:bg-goose-blue-800/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 dark:opacity-50 animate-blob transition-colors duration-500"></div>
+        <div className="absolute -top-[10%] -right-[10%] w-[26rem] h-[26rem] md:w-[45rem] md:h-[45rem] bg-goose-blue-200/30 dark:bg-goose-blue-800/20 rounded-full md:mix-blend-multiply dark:md:mix-blend-lighten md:filter md:blur-3xl opacity-60 dark:opacity-45 md:opacity-70 dark:md:opacity-50 transform-gpu md:motion-safe:animate-blob transition-colors duration-500"></div>
 
         {/* Top Left - Warm Stone/Green tint */}
-        <div className="absolute top-[10%] -left-[10%] w-[35rem] h-[35rem] bg-stone-200/40 dark:bg-stone-700/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-60 dark:opacity-40 animate-blob animation-delay-2000 transition-colors duration-500"></div>
+        <div className="absolute top-[10%] -left-[10%] w-[22rem] h-[22rem] md:w-[35rem] md:h-[35rem] bg-stone-200/40 dark:bg-stone-700/20 rounded-full md:mix-blend-multiply dark:md:mix-blend-lighten md:filter md:blur-3xl opacity-45 dark:opacity-30 md:opacity-60 dark:md:opacity-40 transform-gpu md:motion-safe:animate-blob transition-colors duration-500"
+          style={{ animationDelay: '2s' }}
+        ></div>
 
         {/* Bottom Center - Deep Teal Accent */}
-        <div className="absolute -bottom-[20%] left-[20%] w-[50rem] h-[50rem] bg-goose-blue-100/50 dark:bg-goose-blue-900/20 rounded-full mix-blend-multiply dark:mix-blend-lighten filter blur-3xl opacity-70 dark:opacity-40 animate-blob animation-delay-4000 transition-colors duration-500"></div>
+        <div className="absolute -bottom-[20%] left-[20%] w-[28rem] h-[28rem] md:w-[50rem] md:h-[50rem] bg-goose-blue-100/50 dark:bg-goose-blue-900/20 rounded-full md:mix-blend-multiply dark:md:mix-blend-lighten md:filter md:blur-3xl opacity-55 dark:opacity-30 md:opacity-70 dark:md:opacity-40 transform-gpu md:motion-safe:animate-blob transition-colors duration-500"
+          style={{ animationDelay: '4s' }}
+        ></div>
       </div>
 
       {/* Hand Drawn Floor/Horizon Lines (Sketch Style) */}

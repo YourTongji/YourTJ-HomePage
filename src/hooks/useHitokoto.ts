@@ -24,7 +24,14 @@ export const useHitokoto = () => {
     const fetchHitokoto = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://v1.hitokoto.cn/');
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 2500);
+
+        const response = await fetch('https://v1.hitokoto.cn/', {
+          signal: controller.signal,
+        });
+
+        window.clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error('Failed to fetch hitokoto');
@@ -42,7 +49,16 @@ export const useHitokoto = () => {
       }
     };
 
-    fetchHitokoto();
+    const requestIdleCallback: undefined | ((cb: () => void) => number) = (window as any).requestIdleCallback;
+    const cancelIdleCallback: undefined | ((id: number) => void) = (window as any).cancelIdleCallback;
+
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(() => fetchHitokoto());
+      return () => cancelIdleCallback?.(id);
+    }
+
+    const id = window.setTimeout(() => fetchHitokoto(), 1200);
+    return () => window.clearTimeout(id);
   }, []);
 
   return { hitokoto, loading, error };

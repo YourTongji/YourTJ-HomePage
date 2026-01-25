@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: theme('colors.wabi.paper');
+    color: theme('colors.wabi.text');
+  }
+
+  .dark body {
+    background-color: theme('colors.wabi-dark.paper');
+    color: theme('colors.wabi-dark.text');
+  }
+
+  /* Focus visible styles for better keyboard navigation */
+  *:focus-visible {
+    outline: 3px solid theme('colors.goose-blue.400');
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion for accessibility & low-end devices */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    body {
+      background-color: #ffffff;
+      color: #000000;
+    }
+  }
+}
+
