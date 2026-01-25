@@ -17,6 +17,7 @@ interface HitokotoData {
 
 export const useHitokoto = () => {
   const [hitokoto, setHitokoto] = useState<string>('Connecting your campus life with simplicity and warmth.');
+  const [source, setSource] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -44,6 +45,10 @@ export const useHitokoto = () => {
 
         const data: HitokotoData = await response.json();
         setHitokoto(data.hitokoto);
+        const from = (data.from || '').trim();
+        const fromWho = (data.from_who || '').trim();
+        const sourceText = fromWho ? `-- ${fromWho}《${from}》` : from ? `--《${from}》` : '';
+        setSource(sourceText);
         setError(null);
       } catch (err) {
         console.error('Error fetching hitokoto:', err);
@@ -66,5 +71,5 @@ export const useHitokoto = () => {
     return () => window.clearTimeout(id);
   }, []);
 
-  return { hitokoto, loading, error };
+  return { hitokoto, source, loading, error };
 };

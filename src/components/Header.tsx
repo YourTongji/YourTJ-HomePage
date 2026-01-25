@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
-  const { hitokoto } = useHitokoto();
+  const { hitokoto, source } = useHitokoto();
 
   return (
     <header className="flex flex-col items-center text-center space-y-6 md:space-y-8 relative max-w-5xl mx-auto pt-4 md:pt-12 animate-fade-in-up">
@@ -101,10 +101,15 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
         </h1>
 
         {/* Subtitle - Optimized for mobile width */}
-        <div className="mt-10 md:mt-12 relative inline-block max-w-[90%] md:max-w-3xl mx-auto transform -rotate-1 px-6 animate-fade-in-up-delayed">
+        <div className="mt-10 md:mt-12 relative inline-block w-full max-w-[92%] sm:max-w-[90%] md:max-w-3xl mx-auto transform -rotate-1 px-6 animate-fade-in-up-delayed">
           <p className="text-wabi-muted dark:text-wabi-dark-muted text-lg sm:text-2xl md:text-3xl font-hand leading-relaxed tracking-wide opacity-90 transition-opacity duration-300 hover:opacity-100">
             {hitokoto}
           </p>
+          {source ? (
+            <p className="mt-3 text-wabi-muted/80 dark:text-wabi-dark-muted/80 text-sm sm:text-base font-hand tracking-wide text-right">
+              {source}
+            </p>
+          ) : null}
 
           {/* Quotes tightened for mobile */}
           <span className="absolute -top-4 -left-1 sm:-top-6 sm:-left-8 font-hand text-4xl sm:text-5xl text-stone-300 dark:text-wabi-dark-stone select-none opacity-50 transition-all duration-300 hover:opacity-70 hover:text-goose-blue-300 dark:hover:text-goose-blue-400" aria-hidden="true">"</span>
