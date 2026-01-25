@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface HitokotoData {
   id: number;
@@ -15,61 +15,141 @@ interface HitokotoData {
   length: number;
 }
 
+const DEFAULT_HITOKOTO = 'Connecting your campus life with simplicity and warmth.';
+const CACHE_KEY = 'hitokoto_cache_v1';
+const CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12h
+
+type HitokotoCache = {
+  hitokoto: string;
+  source: string;
+  ts: number;
+};
+
+function buildSource(from: string, fromWho: string | null): string {
+  const f = (from || '').trim();
+  const w = (fromWho || '').trim();
+
+  if (w && f) return `-- ${w} <${f}>`;
+  if (f) return `-- <${f}>`;
+  return '';
+}
+
+function readCache(): HitokotoCache | null {
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<HitokotoCache>;
+    if (typeof parsed.hitokoto !== 'string') return null;
+    if (typeof parsed.source !== 'string') return null;
+    if (typeof parsed.ts !== 'number') return null;
+    return { hitokoto: parsed.hitokoto, source: parsed.source, ts: parsed.ts };
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(cache: HitokotoCache): void {
+  try {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore
+  }
+}
+
+function shouldSkipForConnection(): boolean {
+  const connection = (navigator as any).connection as
+    | undefined
+    | { saveData?: boolean; effectiveType?: string };
+
+  if (!connection) return false;
+  if (connection.saveData) return true;
+  return typeof connection.effectiveType === 'string' && connection.effectiveType.includes('2g');
+}
+
 export const useHitokoto = () => {
-  const [hitokoto, setHitokoto] = useState<string>('Connecting your campus life with simplicity and warmth.');
-  const [source, setSource] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [hitokoto, setHitokoto] = useState<string>(() => readCache()?.hitokoto ?? DEFAULT_HITOKOTO);
+  const [source, setSource] = useState<string>(() => readCache()?.source ?? '');
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    const cached = readCache();
+    const cacheFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
+
+    // Keep LCP stable: don't fetch on cold load, don't fetch on Save-Data/2g, and don't refetch if cache is fresh.
+    if (cacheFresh || shouldSkipForConnection()) return;
+
+    let cancelled = false;
+    let timeoutId: number | undefined;
+    let idleId: number | undefined;
+
+    const requestIdleCallback = (window as any).requestIdleCallback as
+      | undefined
+      | ((cb: () => void, opts?: { timeout: number }) => number);
+    const cancelIdleCallback = (window as any).cancelIdleCallback as undefined | ((id: number) => void);
+
     const fetchHitokoto = async () => {
       try {
         setLoading(true);
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 2500);
+        const abortId = window.setTimeout(() => controller.abort(), 2500);
 
-        // 句子类型限制：动画(a)、文学(d)、诗词(i)、哲学(k)
-        // 文档：https://developer.hitokoto.cn/sentence/
+        // Filter sentence types per docs:
+        // a = animation, d = literature, i = poetry, k = philosophy
+        // https://developer.hitokoto.cn/sentence/
         const params = new URLSearchParams();
         for (const c of ['a', 'd', 'i', 'k']) params.append('c', c);
 
         const response = await fetch(`https://v1.hitokoto.cn/?${params.toString()}`, {
           signal: controller.signal,
         });
+        window.clearTimeout(abortId);
 
-        window.clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch hitokoto');
-        }
+        if (!response.ok) throw new Error('Failed to fetch hitokoto');
 
         const data: HitokotoData = await response.json();
-        setHitokoto(data.hitokoto);
-        const from = (data.from || '').trim();
-        const fromWho = (data.from_who || '').trim();
-        const sourceText = fromWho ? `-- ${fromWho}《${from}》` : from ? `--《${from}》` : '';
-        setSource(sourceText);
+        const nextHitokoto = (data.hitokoto || '').trim();
+        const nextSource = buildSource(data.from, data.from_who);
+
+        if (cancelled) return;
+        if (nextHitokoto) setHitokoto(nextHitokoto);
+        setSource(nextSource);
         setError(null);
+
+        writeCache({ hitokoto: nextHitokoto || DEFAULT_HITOKOTO, source: nextSource, ts: Date.now() });
       } catch (err) {
-        console.error('Error fetching hitokoto:', err);
+        if (cancelled) return;
         setError(err as Error);
-        // Keep the default text on error
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    const requestIdleCallback: undefined | ((cb: () => void) => number) = (window as any).requestIdleCallback;
-    const cancelIdleCallback: undefined | ((id: number) => void) = (window as any).cancelIdleCallback;
+    const schedule = () => {
+      // Delay intentionally so the quote update doesn't affect LCP/CLS on first load.
+      timeoutId = window.setTimeout(() => {
+        if (typeof requestIdleCallback === 'function') {
+          idleId = requestIdleCallback(() => void fetchHitokoto(), { timeout: 15000 });
+          return;
+        }
+        void fetchHitokoto();
+      }, 15000);
+    };
 
-    if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(() => fetchHitokoto());
-      return () => cancelIdleCallback?.(id);
+    if (document.readyState === 'complete') {
+      schedule();
+    } else {
+      window.addEventListener('load', schedule, { once: true });
     }
 
-    const id = window.setTimeout(() => fetchHitokoto(), 1200);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      if (typeof timeoutId === 'number') window.clearTimeout(timeoutId);
+      if (typeof idleId === 'number') cancelIdleCallback?.(idleId);
+      window.removeEventListener('load', schedule);
+    };
   }, []);
 
   return { hitokoto, source, loading, error };
 };
+

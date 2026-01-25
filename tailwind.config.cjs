@@ -38,7 +38,9 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Nunito', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        hand: ['Zhi Mang Xing', 'Gochi Hand', 'cursive'],
+        // Keep the original global "hand" look; only Hitokoto uses a more artistic handwriting.
+        hand: ['Gochi Hand', 'cursive'],
+        hitokoto: ['Zhi Mang Xing', 'Gochi Hand', 'cursive'],
       },
       backgroundImage: {
         'paper-pattern':

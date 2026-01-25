@@ -10,6 +10,9 @@ coverage/
 dist/
 build/
 
+# Temporary image processing outputs
+public/.tmp/
+
 # Deprecated (split backend is in backend-core/ and backend-market/)
 backend/
 

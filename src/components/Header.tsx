@@ -56,12 +56,14 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
         <div className="relative z-10 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center bg-white dark:bg-wabi-dark-subtle rounded-full shadow-sm border-2 border-stone-50 dark:border-wabi-dark-stone group-hover:scale-105 group-hover:shadow-md transition-all duration-500">
            <picture>
              <source srcSet="/logo.webp" type="image/webp" />
-             <img
-               src="/logo.png"
-               alt="YourTJ Logo"
-               decoding="async"
-               className="w-14 h-14 md:w-20 md:h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
-             />
+              <img
+                src="/logo.png"
+                alt="YourTJ Logo"
+                decoding="async"
+                width={160}
+                height={160}
+                className="w-14 h-14 md:w-20 md:h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+              />
            </picture>
         </div>
 
@@ -102,14 +104,12 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
 
         {/* Subtitle - Optimized for mobile width */}
         <div className="mt-10 md:mt-12 relative inline-block w-full max-w-[92%] sm:max-w-[90%] md:max-w-3xl mx-auto transform -rotate-1 px-6 animate-fade-in-up-delayed">
-          <p className="text-wabi-muted dark:text-wabi-dark-muted text-lg sm:text-2xl md:text-3xl font-hand leading-relaxed tracking-wide opacity-90 transition-opacity duration-300 hover:opacity-100">
+          <p className="text-wabi-muted dark:text-wabi-dark-muted text-lg sm:text-2xl md:text-3xl font-hitokoto leading-relaxed tracking-wide opacity-90 transition-opacity duration-300 hover:opacity-100 min-h-[4.5rem] sm:min-h-[5.5rem] md:min-h-[6.5rem]">
             {hitokoto}
           </p>
-          {source ? (
-            <p className="mt-3 text-wabi-muted/80 dark:text-wabi-dark-muted/80 text-sm sm:text-base font-hand tracking-wide text-right">
-              {source}
-            </p>
-          ) : null}
+          <p className="mt-3 text-wabi-muted/80 dark:text-wabi-dark-muted/80 text-sm sm:text-base font-hitokoto tracking-wide text-right min-h-[1.25rem] sm:min-h-[1.5rem]">
+            {source || '\u00A0'}
+          </p>
 
           {/* Quotes tightened for mobile */}
           <span className="absolute -top-4 -left-1 sm:-top-6 sm:-left-8 font-hand text-4xl sm:text-5xl text-stone-300 dark:text-wabi-dark-stone select-none opacity-50 transition-all duration-300 hover:opacity-70 hover:text-goose-blue-300 dark:hover:text-goose-blue-400" aria-hidden="true">"</span>
