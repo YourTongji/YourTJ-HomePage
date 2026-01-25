@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 
 export type Theme = 'light' | 'dark';
 
@@ -31,15 +32,20 @@ export const useTheme = () => {
   }, [theme]);
 
   const toggleTheme = () => {
-    // Check if View Transitions API is supported
-    if (document.startViewTransition) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // If supported, use the View Transitions API to avoid repaint-heavy per-element color transitions.
+    // flushSync ensures React applies the class toggle within the transition callback.
+    if (!prefersReducedMotion && document.startViewTransition) {
       document.startViewTransition(() => {
-        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+        flushSync(() => {
+          setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+        });
       });
-    } else {
-      // Fallback for browsers that don't support View Transitions API
-      setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+      return;
     }
+
+    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
   return { theme, toggleTheme };

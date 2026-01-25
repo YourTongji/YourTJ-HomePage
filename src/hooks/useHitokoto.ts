@@ -29,8 +29,11 @@ function buildSource(from: string, fromWho: string | null): string {
   const f = (from || '').trim();
   const w = (fromWho || '').trim();
 
-  if (w && f) return `-- ${w} <${f}>`;
-  if (f) return `-- <${f}>`;
+  // Use 《...》 via escapes to keep the source file ASCII-only.
+  const l = '\u300a';
+  const r = '\u300b';
+  if (w && f) return `-- ${w}${l}${f}${r}`;
+  if (f) return `-- ${l}${f}${r}`;
   return '';
 }
 
@@ -92,7 +95,7 @@ export const useHitokoto = () => {
       try {
         setLoading(true);
         const controller = new AbortController();
-        const abortId = window.setTimeout(() => controller.abort(), 2500);
+        const abortId = window.setTimeout(() => controller.abort(), 4500);
 
         // Filter sentence types per docs:
         // a = animation, d = literature, i = poetry, k = philosophy
@@ -133,7 +136,7 @@ export const useHitokoto = () => {
           return;
         }
         void fetchHitokoto();
-      }, 15000);
+      }, 2500);
     };
 
     if (document.readyState === 'complete') {
@@ -152,4 +155,3 @@ export const useHitokoto = () => {
 
   return { hitokoto, source, loading, error };
 };
-

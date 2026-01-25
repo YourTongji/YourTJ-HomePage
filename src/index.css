@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 280ms;
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
   html {
     scroll-behavior: smooth;
   }
@@ -25,6 +31,12 @@
 
   /* Reduced motion for accessibility & low-end devices */
   @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+
     *,
     *::before,
     *::after {
@@ -42,4 +54,3 @@
     }
   }
 }
-
