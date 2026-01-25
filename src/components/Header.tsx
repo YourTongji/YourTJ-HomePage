@@ -18,7 +18,7 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
       <button
         onClick={(e) => toggleTheme({ clientX: e.clientX, clientY: e.clientY })}
         aria-label={theme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
-        className="absolute top-0 right-0 md:right-4 group p-3 rounded-full bg-white dark:bg-wabi-dark-subtle border-2 border-stone-200 dark:border-wabi-dark-stone hover:border-goose-blue-400 dark:hover:border-goose-blue-500 transition-all duration-300 hover:scale-110 hover:rotate-12 active:scale-95 shadow-sm hover:shadow-md z-20"
+        className="fixed top-3 right-3 sm:top-4 sm:right-4 md:top-6 md:right-6 group p-3 rounded-full bg-white dark:bg-wabi-dark-subtle border-2 border-stone-200 dark:border-wabi-dark-stone hover:border-goose-blue-400 dark:hover:border-goose-blue-500 transition-all duration-300 hover:scale-110 hover:rotate-12 active:scale-95 shadow-sm hover:shadow-md z-50"
       >
         <div className="relative w-6 h-6">
           {theme === 'light' ? (

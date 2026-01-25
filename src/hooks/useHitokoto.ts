@@ -72,8 +72,6 @@ function shouldSkipForConnection(): boolean {
 export const useHitokoto = () => {
   const [hitokoto, setHitokoto] = useState<string>(() => readCache()?.hitokoto ?? DEFAULT_HITOKOTO);
   const [source, setSource] = useState<string>(() => readCache()?.source ?? '');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const cached = readCache();
@@ -86,18 +84,11 @@ export const useHitokoto = () => {
 
     let cancelled = false;
     let timeoutId: number | undefined;
-    let idleId: number | undefined;
-
-    const requestIdleCallback = (window as any).requestIdleCallback as
-      | undefined
-      | ((cb: () => void, opts?: { timeout: number }) => number);
-    const cancelIdleCallback = (window as any).cancelIdleCallback as undefined | ((id: number) => void);
 
     const fetchHitokoto = async () => {
       try {
-        setLoading(true);
         const controller = new AbortController();
-        const abortId = window.setTimeout(() => controller.abort(), 4500);
+        const abortId = window.setTimeout(() => controller.abort(), 3500);
 
         // Filter sentence types per docs:
         // a = animation, d = literature, i = poetry, k = philosophy
@@ -119,26 +110,18 @@ export const useHitokoto = () => {
         if (cancelled) return;
         if (nextHitokoto) setHitokoto(nextHitokoto);
         setSource(nextSource);
-        setError(null);
 
         writeCache({ hitokoto: nextHitokoto || DEFAULT_HITOKOTO, source: nextSource, ts: Date.now() });
       } catch (err) {
-        if (cancelled) return;
-        setError(err as Error);
-      } finally {
-        if (!cancelled) setLoading(false);
+        // Silently fail: keep cached/default quote to preserve UX and Lighthouse stability.
+        void err;
       }
     };
 
     const schedule = () => {
-      // Delay intentionally so the quote update doesn't affect LCP/CLS on first load.
-      timeoutId = window.setTimeout(() => {
-        if (typeof requestIdleCallback === 'function') {
-          idleId = requestIdleCallback(() => void fetchHitokoto(), { timeout: 15000 });
-          return;
-        }
-        void fetchHitokoto();
-      }, 2500);
+      // Keep it snappy: fetch quickly. If we already have a cached quote, delay a bit to avoid jank.
+      const delayMs = cached ? 300 : 50;
+      timeoutId = window.setTimeout(() => void fetchHitokoto(), delayMs);
     };
 
     // Avoid relying on the window 'load' event (can be delayed/odd on some mobile browsers).
@@ -147,9 +130,8 @@ export const useHitokoto = () => {
     return () => {
       cancelled = true;
       if (typeof timeoutId === 'number') window.clearTimeout(timeoutId);
-      if (typeof idleId === 'number') cancelIdleCallback?.(idleId);
     };
   }, []);
 
-  return { hitokoto, source, loading, error };
+  return { hitokoto, source };
 };

@@ -32,14 +32,16 @@
 
   html {
     scroll-behavior: smooth;
-  }
-
-  body {
     background-color: theme('colors.wabi.paper');
     color: theme('colors.wabi.text');
   }
 
-  .dark body {
+  body {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  html.dark {
     background-color: theme('colors.wabi-dark.paper');
     color: theme('colors.wabi-dark.text');
   }

@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem('theme');
+          const isDark =
+            saved === 'dark' ||
+            (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        } catch {
+          // ignore
+        }
+      })();
+    </script>
     <title>YourTJ社区导航</title>
     <meta name="description" content="YourTJ社区导航 - 选课、积分与开发文档" />
 
@@ -15,6 +29,7 @@
     <!-- Google Fonts (non-render-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://v1.hitokoto.cn" crossorigin />
 
     <!-- Main typography -->
     <link
@@ -32,13 +47,13 @@
 
     <!-- More artistic handwriting for Hitokoto only -->
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap"
-      media="print"
-      onload="this.media='all'"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=optional"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=optional" />
     </noscript>
   </head>
   <body>
