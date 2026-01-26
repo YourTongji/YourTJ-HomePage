@@ -43,11 +43,12 @@ module.exports = {
         // Prefer artistic system fonts (instant, no remote font loading).
         // Avoid KaiTi/Kaiti per request.
         hitokoto: [
+          // Running-script style (availability varies by platform).
+          'STXingkai',
+          'Xingkai SC',
+          'Xingkai TC',
           'HanziPen SC',
           'HanziPen TC',
-          'STHupo',
-          'STCaiyun',
-          'FZShuTi',
           'Segoe Script',
           'Segoe Print',
           'Bradley Hand',
