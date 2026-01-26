@@ -5,19 +5,13 @@ export type Theme = 'light' | 'dark';
 
 type Point = { x: number; y: number } | { clientX: number; clientY: number };
 
-function applyTheme(nextTheme: Theme): void {
+function applyThemeDom(nextTheme: Theme): void {
   const root = document.documentElement;
   if (nextTheme === 'dark') root.classList.add('dark');
   else root.classList.remove('dark');
 
   // Hint to the browser which palette we're using to reduce flashes during transitions.
   root.style.colorScheme = nextTheme;
-
-  try {
-    localStorage.setItem('theme', nextTheme);
-  } catch {
-    // ignore
-  }
 }
 
 export const useTheme = () => {
@@ -37,7 +31,12 @@ export const useTheme = () => {
   });
 
   useEffect(() => {
-    applyTheme(theme);
+    applyThemeDom(theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      // ignore
+    }
   }, [theme]);
 
   const toggleTheme = (point?: Point) => {
@@ -62,25 +61,28 @@ export const useTheme = () => {
     const r = Math.hypot(rx, ry);
 
     const nextTheme: Theme = theme === 'light' ? 'dark' : 'light';
+    const dur = prefersReducedMotion ? 180 : 320;
 
     // If supported, use the View Transitions API to avoid repaint-heavy per-element color transitions.
     // flushSync ensures React applies the class toggle within the transition callback.
-    if (!prefersReducedMotion && document.startViewTransition) {
+    if (document.startViewTransition) {
       root.style.setProperty('--vt-x', `${x}px`);
       root.style.setProperty('--vt-y', `${y}px`);
       root.style.setProperty('--vt-r', `${r}px`);
+      root.style.setProperty('--vt-dur', `${dur}ms`);
       root.classList.add('vt');
 
       document.startViewTransition(() => {
         flushSync(() => {
           setTheme(nextTheme);
-          applyTheme(nextTheme);
+          applyThemeDom(nextTheme);
         });
       }).finished.finally(() => {
         root.classList.remove('vt');
         root.style.removeProperty('--vt-x');
         root.style.removeProperty('--vt-y');
         root.style.removeProperty('--vt-r');
+        root.style.removeProperty('--vt-dur');
       });
 
       return;
@@ -100,7 +102,7 @@ export const useTheme = () => {
       document.body.appendChild(overlay);
 
       setTheme(nextTheme);
-      applyTheme(nextTheme);
+      applyThemeDom(nextTheme);
 
       requestAnimationFrame(() => {
         overlay.style.opacity = '0';
@@ -118,7 +120,7 @@ export const useTheme = () => {
     }
 
     setTheme(nextTheme);
-    applyTheme(nextTheme);
+    applyThemeDom(nextTheme);
   };
 
   return { theme, toggleTheme };

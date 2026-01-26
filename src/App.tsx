@@ -11,7 +11,7 @@ const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-between font-sans selection:bg-goose-blue-200 dark:selection:bg-goose-blue-700 selection:text-wabi-text dark:selection:text-wabi-dark-text overflow-x-hidden bg-wabi-paper dark:bg-wabi-dark-paper transition-colors duration-500">
+      <div className="relative min-h-screen flex flex-col items-center justify-between font-sans selection:bg-goose-blue-200 dark:selection:bg-goose-blue-700 selection:text-wabi-text dark:selection:text-wabi-dark-text overflow-x-hidden bg-wabi-paper dark:bg-wabi-dark-paper transition-colors duration-500">
 
       {/* Ambient Background & Layers */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -23,7 +23,7 @@ const App: React.FC = () => {
       <main className="relative z-10 w-full max-w-6xl px-4 py-8 md:py-24 flex flex-col items-center flex-grow">
         <Header theme={theme} toggleTheme={toggleTheme} />
 
-        <div className="w-full mt-10 md:mt-24">
+        <div className="w-full mt-20 md:mt-24 cv-auto">
           <NavGrid />
         </div>
       </main>

@@ -17,6 +17,21 @@
         }
       })();
     </script>
+    <style>
+      html {
+        background: #f9f8f4;
+        color: #44403c;
+      }
+      html.dark {
+        background: #2a2520;
+        color: #e8e6e1;
+      }
+      body {
+        margin: 0;
+        background: transparent;
+        color: inherit;
+      }
+    </style>
     <title>YourTJ社区导航</title>
     <meta name="description" content="YourTJ社区导航 - 选课、积分与开发文档" />
 
@@ -26,24 +41,11 @@
     <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%apple-touch-icon.png" />
 
-    <!-- Google Fonts (non-render-blocking) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Local fonts (preloaded to avoid FOUT/CLS) -->
+    <link rel="preload" as="font" type="font/woff2" href="%BASE_URL%fonts/nunito-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="%BASE_URL%fonts/gochi-hand.woff2" crossorigin />
+    <link rel="preload" as="image" href="%BASE_URL%logo.webp" type="image/webp" />
     <link rel="preconnect" href="https://v1.hitokoto.cn" crossorigin />
-
-    <!-- Main typography -->
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Nunito:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&display=swap"
-      />
-    </noscript>
 
     <!-- Hitokoto font uses a fast system calligraphy stack (no remote font request). -->
   </head>

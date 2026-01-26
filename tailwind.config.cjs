@@ -40,8 +40,20 @@ module.exports = {
         sans: ['Nunito', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         // Keep the original global "hand" look; only Hitokoto uses a more artistic handwriting.
         hand: ['Gochi Hand', 'cursive'],
-        // Prefer system calligraphy fonts on mobile (faster and more reliable than remote font loading).
-        hitokoto: ['KaiTi', 'Kaiti SC', 'STKaiti', 'DFKai-SB', 'Gochi Hand', 'cursive'],
+        // Prefer artistic system fonts (instant, no remote font loading).
+        // Avoid KaiTi/Kaiti per request.
+        hitokoto: [
+          'HanziPen SC',
+          'HanziPen TC',
+          'STHupo',
+          'STCaiyun',
+          'FZShuTi',
+          'Segoe Script',
+          'Segoe Print',
+          'Bradley Hand',
+          'Gochi Hand',
+          'cursive',
+        ],
       },
       backgroundImage: {
         'paper-pattern':
@@ -54,12 +66,13 @@ module.exports = {
         'wiggle-slow': 'wiggle 5s ease-in-out infinite',
         'spin-slow': 'spin 12s linear infinite',
         'spin-reverse-slow': 'spin-reverse 15s linear infinite',
-        'fade-in': 'fadeIn 0.6s ease-out',
-        'fade-in-up': 'fadeInUp 0.8s ease-out',
-        'fade-in-up-delayed': 'fadeInUp 0.8s ease-out 0.2s both',
-        'scale-in': 'scaleIn 0.5s ease-out',
-        'slide-in-left': 'slideInLeft 0.6s ease-out',
-        'slide-in-right': 'slideInRight 0.6s ease-out',
+        // Keep entrance motion subtle so it doesn't penalize LCP on mobile.
+        'fade-in': 'fadeIn 0.24s ease-out',
+        'fade-in-up': 'fadeInUp 0.28s ease-out',
+        'fade-in-up-delayed': 'fadeInUp 0.28s ease-out 0.08s both',
+        'scale-in': 'scaleIn 0.22s ease-out',
+        'slide-in-left': 'slideInLeft 0.26s ease-out',
+        'slide-in-right': 'slideInRight 0.26s ease-out',
       },
       keyframes: {
         float: {

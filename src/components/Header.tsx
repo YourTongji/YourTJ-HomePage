@@ -1,5 +1,4 @@
 import React from 'react';
-import { Sun, Moon } from 'lucide-react';
 import { Theme } from '../hooks/useTheme';
 import { useHitokoto } from '../hooks/useHitokoto';
 
@@ -7,6 +6,30 @@ interface HeaderProps {
   theme: Theme;
   toggleTheme: (point?: { clientX: number; clientY: number }) => void;
 }
+
+const MoonIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <path
+      d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const SunIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
+    <path
+      d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 
 export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
   const { hitokoto, source } = useHitokoto();
@@ -22,9 +45,9 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
       >
         <div className="relative w-6 h-6">
           {theme === 'light' ? (
-            <Moon className="w-6 h-6 text-wabi-text dark:text-wabi-dark-text transition-transform duration-300 group-hover:rotate-12" strokeWidth={1.5} />
+            <MoonIcon className="w-6 h-6 text-wabi-text dark:text-wabi-dark-text transition-transform duration-300 group-hover:rotate-12" />
           ) : (
-            <Sun className="w-6 h-6 text-wabi-text dark:text-wabi-dark-text transition-transform duration-300 group-hover:rotate-180" strokeWidth={1.5} />
+            <SunIcon className="w-6 h-6 text-wabi-text dark:text-wabi-dark-text transition-transform duration-300 group-hover:rotate-180" />
           )}
         </div>
 
@@ -59,7 +82,9 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
               <img
                 src="/logo.png"
                 alt="YourTJ Logo"
+                loading="eager"
                 decoding="async"
+                fetchPriority="high"
                 width={160}
                 height={160}
                 className="w-14 h-14 md:w-20 md:h-20 object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300"

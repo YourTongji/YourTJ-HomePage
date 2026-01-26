@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Sprout, Award, FileCode2, ExternalLink } from 'lucide-react';
 import { NavLink } from '../types';
 
 interface NavCardProps {
@@ -7,11 +6,82 @@ interface NavCardProps {
   index: number;
 }
 
-const icons = {
-  community: Sprout,
-  credit: Award,
-  docs: FileCode2,
-};
+const SproutIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <path
+      d="M12 21v-7c0-3 2-5 5-6-1 4-3 6-5 7Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 21v-6c0-3-2-5-5-6 1 4 3 6 5 7Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const AwardIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
+    <path
+      d="M9 12l-1 10 4-2 4 2-1-10"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const FileCodeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <path
+      d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7l-5-5Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <path d="M14 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    <path
+      d="M9.5 15.5 8 14l1.5-1.5M14.5 12.5 16 14l-1.5 1.5M13.5 12.2l-3 3.6"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const ExternalLinkIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+    <path
+      d="M14 5h5v5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 14 19 5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M19 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const tapeColors = [
   'bg-yellow-100/90 dark:bg-yellow-200/80',
@@ -22,7 +92,9 @@ const tapeColors = [
 export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const Icon = icons[link.iconType];
+
+  const Icon =
+    link.iconType === 'community' ? SproutIcon : link.iconType === 'credit' ? AwardIcon : FileCodeIcon;
 
   const titleId = `navcard-title-${link.iconType}-${index}`;
   const descId = `navcard-desc-${link.iconType}-${index}`;
@@ -61,7 +133,7 @@ export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
           maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
         }}
       >
-        <div className="w-full h-full opacity-20 bg-paper-pattern"></div>
+        <div className="w-full h-full opacity-20 bg-none md:bg-paper-pattern"></div>
       </div>
 
       {/* Shadow - Enhanced depth with press effect */}
@@ -107,19 +179,10 @@ export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
               >
                 <path d="M 20 50 Q 30 20 50 20 Q 80 20 80 50 Q 80 80 50 80 Q 20 80 20 50" fill="currentColor" opacity="0.8" />
               </svg>
-              <Icon
-                size={28}
-                strokeWidth={1.5}
-                className="text-goose-blue-600 dark:text-goose-blue-400 relative z-10 md:w-8 md:h-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-                aria-hidden="true"
-              />
+              <Icon className="w-7 h-7 md:w-8 md:h-8 text-goose-blue-600 dark:text-goose-blue-400 relative z-10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
             </div>
 
-            <ExternalLink
-              size={16}
-              className="text-wabi-muted dark:text-wabi-dark-muted opacity-50 group-hover:opacity-100 transition-all duration-300 md:w-[18px] md:h-[18px] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              aria-hidden="true"
-            />
+            <ExternalLinkIcon className="w-4 h-4 md:w-[18px] md:h-[18px] text-wabi-muted dark:text-wabi-dark-muted opacity-50 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </div>
 
           <h2
@@ -148,7 +211,7 @@ export const NavCard: React.FC<NavCardProps> = ({ link, index }) => {
         </div>
 
         {/* Paper texture */}
-        <div className="absolute inset-0 bg-paper-pattern opacity-30 dark:opacity-20 pointer-events-none md:mix-blend-multiply dark:md:mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-none md:bg-paper-pattern opacity-30 dark:opacity-20 pointer-events-none md:mix-blend-multiply dark:md:mix-blend-overlay"></div>
       </div>
     </a>
   );
