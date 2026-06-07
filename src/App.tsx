@@ -5,6 +5,7 @@ import { NavGrid } from './components/NavGrid';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { SketchDecorations } from './components/SketchDecorations';
+import { AppDownloadSection } from './components/AppDownloadSection';
 import { useTheme } from './hooks/useTheme';
 
 const App: React.FC = () => {
@@ -23,9 +24,11 @@ const App: React.FC = () => {
       <main className="relative z-10 w-full max-w-6xl px-4 py-8 md:py-24 flex flex-col items-center flex-grow">
         <Header theme={theme} toggleTheme={toggleTheme} />
 
-        <div className="w-full mt-20 md:mt-24 cv-auto">
+        <div className="w-full mt-12 md:mt-16 cv-auto">
           <NavGrid />
         </div>
+
+        <AppDownloadSection />
       </main>
 
       <Footer />

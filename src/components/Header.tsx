@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
         {/* Logo Container */}
         <div className="relative z-10 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center bg-white dark:bg-wabi-dark-subtle rounded-full shadow-sm border-2 border-stone-50 dark:border-wabi-dark-stone group-hover:scale-105 group-hover:shadow-md transition-all duration-500">
           <img
-            src="/favicon.svg"
+            src="/logo.png"
             alt="YourTJ Logo"
             loading="eager"
             decoding="async"
