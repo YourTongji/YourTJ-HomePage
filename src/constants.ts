@@ -18,7 +18,7 @@ export const NAV_LINKS: NavLink[] = [
   {
     id: 'doc',
     title: 'YourTJ 开发文档',
-    url: 'https://doc.yourtj.de',
+    url: 'https://docs.yourtj.de',
     description: '参与社区开发，成为社区的一员',
     iconType: 'docs',
   },
