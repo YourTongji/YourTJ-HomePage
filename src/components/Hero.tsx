@@ -89,7 +89,7 @@ export const Hero: React.FC = () => {
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
         <div className="short-safe grid min-h-[calc(100dvh-4.25rem)] items-center gap-10 py-8 md:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
           <div className="max-w-[640px]">
-            <p className="mb-3 font-brand text-[30px] leading-none tracking-normal sm:text-[36px] motion-safe:animate-fade-up">
+            <p className="mb-3 font-brand text-[36px] leading-none tracking-normal sm:text-[46px] motion-safe:animate-fade-up">
               <span className="text-primary">Your</span>
               <span className="text-link">TJ</span>
             </p>
