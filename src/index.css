@@ -648,6 +648,13 @@ html.dark {
     background: linear-gradient(180deg, rgb(38 54 96 / 0.42) 0%, rgb(26 26 26 / 0) 100%);
   }
 
+  /* Keep hero content clear of the floating nav on short viewports. */
+  @media (max-height: 640px) {
+    .short-safe {
+      padding-top: 4.75rem !important;
+    }
+  }
+
   .mist-canvas-layer {
     -webkit-mask: linear-gradient(#000000fc 0%, #000000e8 8.98%, transparent 100%);
     mask: linear-gradient(#000000fc 0%, #000000e8 8.98%, transparent 100%);

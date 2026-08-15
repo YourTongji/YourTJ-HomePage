@@ -84,7 +84,7 @@ export const Hero: React.FC = () => {
       <MistBackground />
 
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
-        <div className="grid min-h-[calc(100dvh-4.25rem)] items-center gap-10 py-8 md:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
+        <div className="short-safe grid min-h-[calc(100dvh-4.25rem)] items-center gap-10 py-8 md:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
           <div className="max-w-[640px]">
             <p className="mb-3 font-brand text-[24px] leading-none tracking-normal sm:text-[28px] motion-safe:animate-fade-up">
               <span className="text-primary">Your</span>
