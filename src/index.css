@@ -648,8 +648,8 @@ html.dark {
     background: linear-gradient(180deg, rgb(38 54 96 / 0.42) 0%, rgb(26 26 26 / 0) 100%);
   }
 
-  /* Keep hero content clear of the floating nav on short viewports. */
-  @media (max-height: 640px) {
+  /* Keep hero content clear of the floating nav on mobile and tablet viewports. */
+  @media (max-width: 1023px) {
     .short-safe {
       padding-top: 4.75rem !important;
     }
