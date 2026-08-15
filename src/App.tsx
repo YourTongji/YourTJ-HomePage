@@ -1,42 +1,47 @@
 import React from 'react';
-import { Agentation } from 'agentation';
-import { BackgroundWaves } from './components/BackgroundWaves';
-import { NavGrid } from './components/NavGrid';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
-import { SketchDecorations } from './components/SketchDecorations';
 import { AppDownloadSection } from './components/AppDownloadSection';
+import { CommunitySection } from './components/CommunitySection';
+import { Footer } from './components/Footer';
+import { Header } from './components/Header';
+import { Hero } from './components/Hero';
 import { useTheme } from './hooks/useTheme';
+import { I18nProvider, useI18n } from './i18n';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useI18n();
 
   return (
-      <div className="relative min-h-screen flex flex-col items-center justify-between font-sans selection:bg-goose-blue-200 dark:selection:bg-goose-blue-700 selection:text-wabi-text dark:selection:text-wabi-dark-text overflow-x-hidden bg-wabi-paper dark:bg-wabi-dark-paper transition-colors duration-500">
-
-      {/* Ambient Background & Layers */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <BackgroundWaves />
-        <SketchDecorations />
+    <div id="top" className="relative flex min-h-dvh flex-col overflow-x-clip bg-page text-primary">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
+        <div className="mesh-gradient absolute inset-0" />
       </div>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
+      >
+        {t('a11y.skip')}
+      </a>
 
-      {/* Main Content Area - Reduced vertical padding on mobile */}
-      <main className="relative z-10 w-full max-w-6xl px-4 py-8 md:py-24 flex flex-col items-center flex-grow">
-        <Header theme={theme} toggleTheme={toggleTheme} />
+      <Header theme={theme} toggleTheme={toggleTheme} />
 
-        <div className="w-full mt-12 md:mt-16 cv-auto">
-          <NavGrid />
-        </div>
-
+      <main id="main" className="relative z-10 -mt-14 flex-1">
+        <Hero />
         <AppDownloadSection />
+        <CommunitySection />
       </main>
 
-      <Footer />
-
-      {/* Agentation Toolbar - Only in development */}
-      {import.meta.env.DEV && <Agentation />}
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <I18nProvider>
+    <AppContent />
+  </I18nProvider>
+);
 
 export default App;

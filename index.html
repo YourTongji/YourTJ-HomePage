@@ -13,18 +13,18 @@
           if (isDark) document.documentElement.classList.add('dark');
           document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
         } catch {
-          // ignore
+          // Ignore storage failures; the app falls back to system preference.
         }
       })();
     </script>
     <style>
       html {
-        background: #f9f8f4;
-        color: #44403c;
+        background: #ffffff;
+        color: #1a1a1a;
       }
       html.dark {
-        background: #2a2520;
-        color: #e8e6e1;
+        background: #1a1a1a;
+        color: #ffffff;
       }
       body {
         margin: 0;
@@ -32,21 +32,31 @@
         color: inherit;
       }
     </style>
-    <title>YourTJ社区导航</title>
-    <meta name="description" content="YourTJ社区导航 - 选课、积分与开发文档" />
 
-    <!-- Favicons (SVG is not supported by all mobile browsers) -->
+    <title>YourTJ - 同济大学学生社区</title>
+    <meta
+      name="description"
+      content="YourTJ 是同济大学学生社区。进入选课社区，或下载 App，在手机上查看课程、评课和模拟排课。"
+    />
+
+    <meta property="og:title" content="YourTJ - 同济大学学生社区" />
+    <meta
+      property="og:description"
+      content="连接校园，也连接每一种可能。选课社区与 YourTJ App 的入口。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://yourtj.de/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.cn" />
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.cn/css2?family=Faster+One&display=swap"
+    />
+
     <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%apple-touch-icon.png" />
-
-    <!-- Local fonts (preloaded to avoid FOUT/CLS) -->
-    <link rel="preload" as="font" type="font/woff2" href="%BASE_URL%fonts/nunito-latin.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="%BASE_URL%fonts/gochi-hand.woff2" crossorigin />
-    <link rel="preload" as="image" href="%BASE_URL%logo.png" type="image/png" />
-    <link rel="preconnect" href="https://v1.hitokoto.cn" crossorigin />
-
-    <!-- Hitokoto font uses a fast system calligraphy stack (no remote font request). -->
+    <link rel="preload" as="image" href="%BASE_URL%logo.png" />
   </head>
   <body>
     <div id="root"></div>
