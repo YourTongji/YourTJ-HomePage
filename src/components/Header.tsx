@@ -6,7 +6,7 @@ import { useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
 import { LOCALES, Locale, useI18n } from '../i18n';
 import { Theme } from '../types';
 import { assetUrl } from '../utils/assets';
-import { ArrowDownRightIcon, CheckIcon, MoonIcon, SunIcon } from './icons';
+import { ArrowDownRightIcon, CheckIcon, MoonIcon, PhoneIcon, SunIcon } from './icons';
 
 interface HeaderProps {
   theme: Theme;
@@ -42,6 +42,7 @@ const LanguageMenu: React.FC = () => {
     if (!open) return;
 
     updatePosition();
+    menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
     window.addEventListener('resize', updatePosition);
     document.addEventListener('wheel', closeMenu, { passive: true });
     document.addEventListener('touchmove', closeMenu, { passive: true });
@@ -142,6 +143,7 @@ const LanguageMenu: React.FC = () => {
                   type="button"
                   role="menuitemradio"
                   aria-checked={selected}
+                  tabIndex={selected ? 0 : -1}
                   onClick={() => selectLocale(item.value)}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-150 ${
                     selected
@@ -201,12 +203,13 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
         />
       </a>
 
-      <nav aria-label={t('nav.language')} className="flex shrink-0 items-center gap-1.5">
+      <nav aria-label={t('nav.primary')} className="flex shrink-0 items-center gap-1.5">
         <a
           href="#app"
           aria-label={t('nav.getApp')}
           className="group hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-selected px-4 text-sm font-semibold text-link transition-[background-color,transform] duration-200 hover:bg-brand/20 active:scale-[0.96] sm:inline-flex sm:h-10 sm:px-5 dark:bg-white/5 dark:hover:bg-white/10"
         >
+          <PhoneIcon className="h-4 w-4" />
           <span aria-hidden="true">{t('nav.getApp')}</span>
           <ArrowDownRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
         </a>

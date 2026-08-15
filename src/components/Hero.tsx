@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../i18n';
 import { assetUrl } from '../utils/assets';
-import { AndroidIcon, AppleIcon, ArrowDownRightIcon, ArrowUpRightIcon } from './icons';
+import { AndroidIcon, AppleIcon, ArrowDownRightIcon, ArrowUpRightIcon, PhoneIcon } from './icons';
 import { ProductEntries } from './ProductEntries';
 import { MistBackground } from './MistBackground';
 
@@ -66,7 +66,10 @@ const AppVisualCard: React.FC = () => {
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-link">{t('nav.getApp')}</span>
+          <span className="flex items-center gap-2 text-[15px] font-semibold text-link">
+            <PhoneIcon className="h-4 w-4" />
+            {t('nav.getApp')}
+          </span>
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface text-primary transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
             <ArrowUpRightIcon className="h-[18px] w-[18px]" />
           </span>
@@ -86,7 +89,7 @@ export const Hero: React.FC = () => {
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
         <div className="short-safe grid min-h-[calc(100dvh-4.25rem)] items-center gap-10 py-8 md:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
           <div className="max-w-[640px]">
-            <p className="mb-3 font-brand text-[24px] leading-none tracking-normal sm:text-[28px] motion-safe:animate-fade-up">
+            <p className="mb-3 font-brand text-[30px] leading-none tracking-normal sm:text-[36px] motion-safe:animate-fade-up">
               <span className="text-primary">Your</span>
               <span className="text-link">TJ</span>
             </p>
@@ -104,7 +107,10 @@ export const Hero: React.FC = () => {
                 aria-label={t('nav.getApp')}
                 className="group flex w-full items-center justify-between rounded-2xl border border-edge bg-surface-selected px-5 py-3.5 text-link shadow-card transition-[transform,border-color,background-color] duration-200 hover:border-brand/35 active:scale-[0.96]"
               >
-                <span className="text-sm font-semibold">{t('nav.getApp')}</span>
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <PhoneIcon className="h-4 w-4" />
+                  {t('nav.getApp')}
+                </span>
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-primary transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5">
                   <ArrowDownRightIcon className="h-4 w-4" />
                 </span>

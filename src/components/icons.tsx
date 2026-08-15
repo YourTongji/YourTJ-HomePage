@@ -56,6 +56,14 @@ export const ArrowDownRightIcon: React.FC<IconProps> = ({ className }) => (
   </StrokeIcon>
 );
 
+export const PhoneIcon: React.FC<IconProps> = ({ className }) => (
+  <StrokeIcon className={className}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+    <path d="M11 18.5h2" />
+  </StrokeIcon>
+);
+
+
 export const ExternalLinkIcon: React.FC<IconProps> = ({ className }) => (
   <StrokeIcon className={className}>
     <path d="M13 5h6v6" />
@@ -71,12 +79,6 @@ export const MailIcon: React.FC<IconProps> = ({ className }) => (
   </StrokeIcon>
 );
 
-export const GlobeIcon: React.FC<IconProps> = ({ className }) => (
-  <StrokeIcon className={className}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h18M12 3a13 13 0 0 1 0 18M12 3a13 13 0 0 0 0 18" />
-  </StrokeIcon>
-);
 
 export const ClockIcon: React.FC<IconProps> = ({ className }) => (
   <StrokeIcon className={className}>
