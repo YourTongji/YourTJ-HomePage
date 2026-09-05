@@ -5,6 +5,7 @@ export interface ProductEntry {
   titleKey: string;
   descriptionKey: string;
   statusLabelKey?: string;
+  noticeKey?: string;
   href: string;
   available: boolean;
 }
@@ -15,6 +16,14 @@ export interface CommunityLink {
   noteKey: string;
   icon: 'qq' | 'telegram' | 'email' | 'github';
   href: string;
+}
+
+export interface PreviewSlide {
+  id: 'hub-home' | 'hub-courses' | 'hub-schedule' | 'hub-wiki';
+  titleKey: string;
+  href: string;
+  imageLight: string;
+  imageDark: string;
 }
 
 export interface AppLinkConfig {

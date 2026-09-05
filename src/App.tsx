@@ -4,6 +4,7 @@ import { CommunitySection } from './components/CommunitySection';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
+import { ProductPreview } from './components/ProductPreview';
 import { useTheme } from './hooks/useTheme';
 import { I18nProvider, useI18n } from './i18n';
 
@@ -27,6 +28,7 @@ const AppContent: React.FC = () => {
 
       <main id="main" className="relative z-10 -mt-14 flex-1">
         <Hero />
+        <ProductPreview />
         <AppDownloadSection />
         <CommunitySection />
       </main>

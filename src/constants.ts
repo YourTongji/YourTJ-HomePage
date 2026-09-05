@@ -1,4 +1,4 @@
-import { AppLinkConfig, CommunityLink, ProductEntry } from './types';
+import { AppLinkConfig, CommunityLink, PreviewSlide, ProductEntry } from './types';
 
 /**
  * All outbound URLs and social-placeholder values live in this single file.
@@ -10,6 +10,7 @@ export const PRODUCT_ENTRIES: ProductEntry[] = [
     id: 'course-community',
     titleKey: 'product.course.title',
     descriptionKey: 'product.course.description',
+    noticeKey: 'product.course.notice',
     href: 'https://xk.yourtj.de',
     available: true,
   },
@@ -18,8 +19,40 @@ export const PRODUCT_ENTRIES: ProductEntry[] = [
     titleKey: 'product.hub.title',
     descriptionKey: 'product.hub.description',
     statusLabelKey: 'product.hub.status',
-    href: '',
-    available: false,
+    href: 'https://f.yourtj.de',
+    available: true,
+  },
+];
+
+// Slide order mirrors the storytelling flow: land, explore, plan, contribute.
+export const PREVIEW_SLIDES: PreviewSlide[] = [
+  {
+    id: 'hub-home',
+    titleKey: 'preview.slide.hub.title',
+    href: 'https://f.yourtj.de/',
+    imageLight: 'preview-hub-light.webp',
+    imageDark: 'preview-hub-dark.webp',
+  },
+  {
+    id: 'hub-courses',
+    titleKey: 'preview.slide.course.title',
+    href: 'https://f.yourtj.de/courses',
+    imageLight: 'preview-course-light.webp',
+    imageDark: 'preview-course-dark.webp',
+  },
+  {
+    id: 'hub-schedule',
+    titleKey: 'preview.slide.schedule.title',
+    href: 'https://f.yourtj.de/schedule',
+    imageLight: 'preview-sim-light.webp',
+    imageDark: 'preview-sim-dark.webp',
+  },
+  {
+    id: 'hub-wiki',
+    titleKey: 'preview.slide.wiki.title',
+    href: 'https://f.yourtj.de/wiki',
+    imageLight: 'preview-wiki-light.webp',
+    imageDark: 'preview-wiki-dark.webp',
   },
 ];
 
