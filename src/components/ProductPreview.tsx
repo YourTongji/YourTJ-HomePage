@@ -14,6 +14,55 @@ const SWIPE_THRESHOLD_PX = 48;
 
 const displayUrl = (href: string): string => href.replace(/^https?:\/\//, '');
 
+interface PreviewEdgeControlProps {
+  side: 'previous' | 'next';
+  label: string;
+  onSelect: () => void;
+}
+
+/**
+ * Carousel navigation belongs to the frame's own left and right edges, not to a
+ * round button hovering over the screenshot. Each edge is a tall strip carrying
+ * a masked blur that dissolves the screenshot into the seam, plus a brand
+ * hairline that lights up on hover, focus or press. Both sides run the same
+ * recipe mirrored by a modifier class, so the pair always reads symmetric.
+ */
+const PreviewEdgeControl: React.FC<PreviewEdgeControlProps> = ({ side, label, onSelect }) => {
+  const isPrevious = side === 'previous';
+  const Chevron = isPrevious ? ChevronLeftIcon : ChevronRightIcon;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-label={label}
+      className={`group/edge absolute inset-y-0 z-10 flex w-11 cursor-pointer items-center justify-center sm:w-14 ${
+        isPrevious ? 'left-0' : 'right-0'
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`preview-edge-blur opacity-0 transition-opacity duration-300 ease-out group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100 group-active/edge:opacity-100 motion-reduce:transition-none ${
+          isPrevious ? '' : 'preview-edge-blur--flip'
+        }`}
+      />
+      <span
+        aria-hidden="true"
+        className={`preview-edge-seam opacity-0 transition-opacity duration-300 ease-out group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100 group-active/edge:opacity-100 motion-reduce:transition-none ${
+          isPrevious ? '' : 'preview-edge-seam--flip'
+        }`}
+      />
+      <Chevron
+        className={`relative h-5 w-5 text-secondary transition-[transform,color] duration-300 ease-out group-hover/edge:text-primary group-focus-visible/edge:text-primary group-active/edge:text-primary group-active/edge:scale-90 motion-reduce:transition-none ${
+          isPrevious
+            ? 'group-hover/edge:-translate-x-0.5 group-focus-visible/edge:-translate-x-0.5'
+            : 'group-hover/edge:translate-x-0.5 group-focus-visible/edge:translate-x-0.5'
+        }`}
+      />
+    </button>
+  );
+};
+
 export const ProductPreview: React.FC = () => {
   const { t } = useI18n();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -207,22 +256,16 @@ export const ProductPreview: React.FC = () => {
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={() => goTo(activeIndex - 1)}
-                aria-label={t('preview.prev')}
-                className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-edge bg-page/70 text-primary shadow-card backdrop-blur-md transition-[transform,border-color,background-color] duration-200 hover:border-brand/40 active:scale-90 sm:left-4 sm:h-10 sm:w-10"
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => goTo(activeIndex + 1)}
-                aria-label={t('preview.next')}
-                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-edge bg-page/70 text-primary shadow-card backdrop-blur-md transition-[transform,border-color,background-color] duration-200 hover:border-brand/40 active:scale-90 sm:right-4 sm:h-10 sm:w-10"
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </button>
+              <PreviewEdgeControl
+                side="previous"
+                label={t('preview.prev')}
+                onSelect={() => goTo(activeIndex - 1)}
+              />
+              <PreviewEdgeControl
+                side="next"
+                label={t('preview.next')}
+                onSelect={() => goTo(activeIndex + 1)}
+              />
             </div>
           </div>
 

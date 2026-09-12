@@ -7,14 +7,6 @@ import { AppLinkConfig, CommunityLink, PreviewSlide, ProductEntry } from './type
 
 export const PRODUCT_ENTRIES: ProductEntry[] = [
   {
-    id: 'course-community',
-    titleKey: 'product.course.title',
-    descriptionKey: 'product.course.description',
-    noticeKey: 'product.course.notice',
-    href: 'https://xk.yourtj.de',
-    available: true,
-  },
-  {
     id: 'hub',
     titleKey: 'product.hub.title',
     descriptionKey: 'product.hub.description',
@@ -56,14 +48,23 @@ export const PREVIEW_SLIDES: PreviewSlide[] = [
   },
 ];
 
-// Preserved from the current production page. Do not replace without a decision.
+/**
+ * The forum app has not shipped yet. While false, every app entry point renders
+ * as a non-interactive masked preview instead of a live download link.
+ */
+export const APP_AVAILABLE = false;
+
+/**
+ * Reserved destinations for the mobile client. It has not shipped yet, so these
+ * point at the Hub repository instead of the retired YourTJCourse repos. Swap in
+ * real store / release URLs when the app goes live and APP_AVAILABLE flips.
+ */
 export const APP_LINKS: AppLinkConfig = {
-  iosTestflight: 'https://testflight.apple.com/join/KkBg6quW',
-  iosIssues: 'https://github.com/YourTongji/YourTJCourse-iOS/issues',
-  androidAcceleratedApk:
-    'https://gh-proxy.com/https://github.com/YourTongji/YourTJCourse-Flutter/releases/download/dev-latest/app-arm64-v8a-release.apk',
-  androidReleases: 'https://github.com/YourTongji/YourTJCourse-Flutter/releases/tag/dev-latest',
-  androidIssues: 'https://github.com/YourTongji/YourTJCourse-Flutter/issues',
+  iosTestflight: 'https://github.com/YourTongji/YourTJ-Hub/releases',
+  iosIssues: 'https://github.com/YourTongji/YourTJ-Hub/issues',
+  androidAcceleratedApk: 'https://github.com/YourTongji/YourTJ-Hub/releases',
+  androidReleases: 'https://github.com/YourTongji/YourTJ-Hub/releases',
+  androidIssues: 'https://github.com/YourTongji/YourTJ-Hub/issues',
 };
 
 export const QQ_GROUP_URL = 'https://qm.qq.com/q/8MNG0NZyj6';

@@ -1,11 +1,10 @@
 export type Theme = 'light' | 'dark';
 
 export interface ProductEntry {
-  id: 'course-community' | 'hub';
+  id: 'hub';
   titleKey: string;
   descriptionKey: string;
   statusLabelKey?: string;
-  noticeKey?: string;
   href: string;
   available: boolean;
 }

@@ -64,6 +64,28 @@
   --glass-inner-border: rgba(255 255 255 / 0.14);
   --foil-sheen: rgba(255 255 255 / 0.62);
 
+  /*
+   * Prism ramp for the hero's spectral ribbon. Deliberately anchored on the
+   * brand green and allowed to cool through cyan into a single violet, so it
+   * reads as light split through glass rather than a primary-colour rainbow.
+   * Light mode lays pigment on paper, so the stops are opaque-ish and low in
+   * contrast; the dark block swaps in luminous stops that glow off near-black.
+   */
+  --spectrum-a: rgb(114 240 166 / 0.9);
+  --spectrum-b: rgb(45 212 191 / 0.72);
+  --spectrum-c: rgb(96 165 250 / 0.8);
+  --spectrum-d: rgb(129 140 248 / 0.68);
+  --spectrum-e: rgb(192 132 252 / 0.62);
+  --spectrum-f: rgb(244 114 182 / 0.44);
+  /*
+   * Banding layer for the travelling twin. On paper the phase layer only
+   * modulates contrast (soft-light), because a difference blend against a
+   * near-white page inverts into dark stripes and reads as dirt.
+   */
+  --spectrum-veil: rgb(255 255 255 / 0.4);
+  --spectrum-phase-blend: soft-light;
+  --spectrum-field-opacity: 0.85;
+
   /* Elevation (from FIG Elevation/SM, /MD, /LG), softened for air */
   --shadow-sm: 0 1px 1px rgba(0 0 0 / 0.03);
   --shadow-md: 0 4px 6px -1px rgba(0 0 0 / 0.07), 0 2px 4px -1px rgba(0 0 0 / 0.035);
@@ -125,6 +147,26 @@ html.dark {
   --glass-sheen: rgba(255 255 255 / 0.05);
   --glass-inner-border: rgba(255 255 255 / 0.07);
   --foil-sheen: rgba(255 255 255 / 0.14);
+
+  /*
+   * Dark spectral ribbon: the same ramp pushed to luminous stops. On near-black
+   * the light additively brightens the field, so the alpha can stay low while
+   * the hues read far stronger than their light-mode counterparts.
+   */
+  --spectrum-a: rgb(61 223 130 / 0.88);
+  --spectrum-b: rgb(45 212 191 / 0.78);
+  --spectrum-c: rgb(96 165 250 / 0.8);
+  --spectrum-d: rgb(129 140 248 / 0.68);
+  --spectrum-e: rgb(167 139 250 / 0.7);
+  --spectrum-f: rgb(232 121 249 / 0.52);
+  /*
+   * On near-black the phase layer can afford a difference blend: there is no
+   * white page to invert into dirt, and the subtraction is what carves the
+   * dark seams that make the bands look like they travel.
+   */
+  --spectrum-veil: rgb(255 255 255 / 0.38);
+  --spectrum-phase-blend: difference;
+  --spectrum-field-opacity: 0.95;
 
   /* Slightly deeper shadows on dark, still airy */
   --shadow-sm: 0 1px 2px rgba(0 0 0 / 0.22);
@@ -353,26 +395,150 @@ html.dark {
       var(--shadow-sm);
   }
 
-  /* Amber semantic warning for scheduled shutdowns, kept off the brand ramp. */
-  .sunset-notice {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    border: 1px solid rgb(180 83 9 / 0.25);
-    border-radius: 999px;
-    padding: 0.3rem 0.65rem;
-    background: rgb(245 158 11 / 0.1);
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1;
-    white-space: nowrap;
-    color: rgb(146 64 14);
+  /*
+   * Blurred edge affordance for the product preview carousel. The frame's own
+   * left and right edges are the controls: a masked backdrop blur softens the
+   * screenshot into the seam while the page tint carries the far side of the
+   * mask out, so nothing reads as a control floating on top of the image.
+   *
+   * One recipe serves both sides and --preview-edge-dir mirrors it, because the
+   * gradient and the mask must agree on direction or the blur lands on the
+   * wrong half of the strip. The reveal itself is a Tailwind opacity transition
+   * driven by hover, focus-visible and active, so these rules own only material.
+   */
+  .preview-edge-blur {
+    --preview-edge-dir: right;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to var(--preview-edge-dir),
+      rgb(var(--background-page-rgb) / 0.62),
+      rgb(var(--background-page-rgb) / 0.2) 58%,
+      rgb(var(--background-page-rgb) / 0) 100%
+    );
+    -webkit-backdrop-filter: blur(10px) saturate(1.08);
+    backdrop-filter: blur(10px) saturate(1.08);
+    -webkit-mask-image: linear-gradient(
+      to var(--preview-edge-dir),
+      #000 0%,
+      #000 32%,
+      transparent 86%
+    );
+    mask-image: linear-gradient(
+      to var(--preview-edge-dir),
+      #000 0%,
+      #000 32%,
+      transparent 86%
+    );
+    pointer-events: none;
   }
 
-  html.dark .sunset-notice {
-    border-color: rgb(251 191 36 / 0.28);
-    background: rgb(251 191 36 / 0.1);
-    color: rgb(252 211 77);
+  .preview-edge-blur--flip {
+    --preview-edge-dir: left;
+  }
+
+  /* Brand hairline on the seam, bloomed so the light bleeds onto the screenshot
+     instead of stopping on a hard line. */
+  .preview-edge-seam {
+    position: absolute;
+    top: 12%;
+    bottom: 12%;
+    inset-inline-start: 0;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-brand-rgb) / 0.9) 50%,
+      transparent
+    );
+    box-shadow: 0 0 16px 3px rgb(var(--background-brand-rgb) / 0.4);
+    pointer-events: none;
+  }
+
+  .preview-edge-seam--flip {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+
+  @supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+    /* Without a backdrop to sample, the tint alone has to hold the edge. */
+    .preview-edge-blur {
+      background: linear-gradient(
+        to var(--preview-edge-dir),
+        rgb(var(--background-page-rgb) / 0.88),
+        rgb(var(--background-page-rgb) / 0.36) 58%,
+        rgb(var(--background-page-rgb) / 0) 100%
+      );
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .preview-edge-blur {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: linear-gradient(
+        to var(--preview-edge-dir),
+        rgb(var(--background-page-rgb) / 0.92),
+        rgb(var(--background-page-rgb) / 0.42) 58%,
+        rgb(var(--background-page-rgb) / 0) 100%
+      );
+    }
+
+    .preview-edge-seam {
+      box-shadow: none;
+    }
+  }
+
+  /*
+   * Frost veil for surfaces that exist but are not usable yet. Two things have
+   * to happen at once: the surface must read as gated, and the text underneath
+   * must stay legible. So the scrim stays light and the blur stays short -
+   * enough to fog the surface, never enough to swallow the copy. On dark panels
+   * a plain dark scrim is invisible against an already-dark panel, hence the
+   * brightness drop there.
+   *
+   * The veil carries its own z-index because it is layered over content that is
+   * itself positioned, and the two are not always siblings in paint order.
+   * Anything that has to stay crisp on top of it opts out with a higher z-index.
+   */
+  .frost-veil {
+    z-index: 1;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--background-page-rgb) / 0.34),
+      rgb(var(--background-page-rgb) / 0.2)
+    );
+    -webkit-backdrop-filter: blur(1.5px) saturate(0.85);
+    backdrop-filter: blur(1.5px) saturate(0.85);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+
+  html.dark .frost-veil {
+    background: linear-gradient(
+      180deg,
+      rgb(26 26 26 / 0.42),
+      rgb(26 26 26 / 0.3)
+    );
+    -webkit-backdrop-filter: blur(1.5px) saturate(0.75) brightness(0.82);
+    backdrop-filter: blur(1.5px) saturate(0.75) brightness(0.82);
+  }
+
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .frost-veil {
+      background: rgb(var(--background-page-rgb) / 0.46);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .frost-veil {
+      background: rgb(var(--background-page-rgb) / 0.62);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    html.dark .frost-veil {
+      background: rgb(26 26 26 / 0.62);
+    }
   }
   html.dark .glass-panel {
     border-color: rgb(255 255 255 / 0.1);
@@ -694,6 +860,165 @@ html.dark {
     background:
       radial-gradient(52rem 32rem at 82% 14%, rgb(255 255 255 / 0.045), transparent 58%),
       radial-gradient(34rem 26rem at 8% 88%, rgb(114 240 166 / 0.045), transparent 62%);
+  }
+
+  /*
+   * Spectral ribbon across the top of the hero.
+   *
+   * Technique borrowed from the "jumbo" field on NapCat's docs hero: two
+   * stacked layers of repeating linear gradients, of which only the upper one
+   * animates its background-position. The moving lattice is blended against the
+   * static one, so the two drift in and out of phase and the eye reads bands
+   * travelling through the colour instead of a gradient sliding sideways.
+   *
+   * What makes the original read as fog rather than stripes is not the blend
+   * mode but the scale: its gradient tiles are several times wider than the
+   * viewport, so a full band cycle stretches across hundreds of pixels and the
+   * fades between bands are longer than most UI elements. Measured against a
+   * capture of their hero, adjacent-pixel steps sit around 1/255 luminance.
+   * The tiles here are sized to land in the same range, and the banding layer
+   * is kept faint enough that it modulates the wash instead of drawing lines.
+   *
+   * Two deliberate departures from the original: the ramp is anchored on the
+   * brand green and cools through cyan into a single violet, so it reads as
+   * white light split through glass rather than a primary-colour rainbow; and
+   * light and dark get separate recipes - pigment on paper versus luminosity on
+   * near-black - instead of one inverted layer reused for both.
+   *
+   * Paint cost: animating background-position repaints the layer every frame,
+   * so the field is capped in height and pinned with `contain: strict` to keep
+   * that repaint away from the rest of the page.
+   */
+  .spectrum-field {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    height: min(76vh, 800px);
+    overflow: hidden;
+    opacity: var(--spectrum-field-opacity);
+    contain: strict;
+    pointer-events: none;
+    /*
+     * A single ellipse hung off the top-right corner, the way the original does
+     * it. It is the only thing keeping the ribbon off the copy: the gradient
+     * reaches full transparency before the bottom-left corner, so the field
+     * never terminates on a line the eye can follow.
+     */
+    -webkit-mask-image: radial-gradient(
+      128% 108% at 100% -8%,
+      #000 28%,
+      rgb(0 0 0 / 0.8) 48%,
+      rgb(0 0 0 / 0.34) 66%,
+      transparent 88%
+    );
+    mask-image: radial-gradient(
+      128% 108% at 100% -8%,
+      #000 28%,
+      rgb(0 0 0 / 0.8) 48%,
+      rgb(0 0 0 / 0.34) 66%,
+      transparent 88%
+    );
+  }
+
+  @media (max-width: 639px) {
+    .spectrum-field {
+      height: 54vh;
+    }
+  }
+
+  .spectrum-field::before,
+  .spectrum-field::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-repeat: repeat;
+  }
+
+  /*
+   * Both layers run at exactly 90deg, so the gradient line is the tile width
+   * and nothing else. That is what keeps the tiling honest: at any other angle
+   * the gradient line also picks up the tile height, the pattern period stops
+   * dividing the tile, and the browser has to stitch a visible seam at every
+   * tile boundary - which is what a hard edge in the middle of a soft wash
+   * actually is.
+   *
+   * Sizing rule for everything below: tile = 200%, cycle = 50% of the gradient
+   * line. That makes the period equal exactly one viewport width, the tile two
+   * periods, and the animated distance (3 x (element - tile)) three periods -
+   * so neither the tiling nor the end of the loop can show.
+   *
+   * Speed is then set by the tile multiple, not by the duration: distance per
+   * loop = 3 x width. At 90s that is ~48px/s at 1440px wide, which is what the
+   * reference site travels (its 90s loop moves a 200% tile over the same
+   * three-width distance). Bigger tiles travel further per loop, which is what
+   * made the earlier 500% version feel nearly four times too quick.
+   */
+  .spectrum-field::before {
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--spectrum-a) 0%,
+      var(--spectrum-b) 7%,
+      var(--spectrum-c) 14%,
+      var(--spectrum-d) 21%,
+      var(--spectrum-e) 28%,
+      var(--spectrum-f) 36%,
+      var(--spectrum-b) 43%,
+      var(--spectrum-a) 50%
+    );
+    background-size: 200% 100%;
+    /* 82% places the ramp's richer middle hues under the mask's strong corner. */
+    background-position: 82% 50%;
+  }
+
+  /*
+   * Travelling twin: the same ramp plus the banding layer that gives the drift
+   * its grain. Both tiles are 200% so the whole layer travels as one piece at
+   * the reference speed, while the difference blend against the static wash
+   * underneath keeps shifting the colours as it passes.
+   */
+  .spectrum-field::after {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        var(--spectrum-veil) 0%,
+        var(--spectrum-veil) 22%,
+        transparent 31%,
+        transparent 38%,
+        var(--spectrum-veil) 50%
+      ),
+      repeating-linear-gradient(
+        90deg,
+        var(--spectrum-a) 0%,
+        var(--spectrum-b) 7%,
+        var(--spectrum-c) 14%,
+        var(--spectrum-d) 21%,
+        var(--spectrum-e) 28%,
+        var(--spectrum-f) 36%,
+        var(--spectrum-b) 43%,
+        var(--spectrum-a) 50%
+      );
+    background-size: 200% 100%, 200% 100%;
+    background-position: 50% 50%, 50% 50%;
+    mix-blend-mode: var(--spectrum-phase-blend);
+    animation: spectrum-phase 90s linear infinite;
+    will-change: background-position;
+  }
+
+  @keyframes spectrum-phase {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spectrum-field::after {
+      animation: none;
+    }
   }
 
   /*

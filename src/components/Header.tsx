@@ -1,23 +1,34 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLanguage } from '@fortawesome/free-solid-svg-icons';
 import { useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import { APP_AVAILABLE, PRODUCT_ENTRIES } from '../constants';
 import { LOCALES, Locale, useI18n } from '../i18n';
 import { Theme } from '../types';
 import { assetUrl } from '../utils/assets';
-import { ArrowDownRightIcon, CheckIcon, MoonIcon, PhoneIcon, SunIcon } from './icons';
+import {
+  ArrowDownRightIcon,
+  ArrowUpRightIcon,
+  CheckIcon,
+  LanguageIcon,
+  MoonIcon,
+  PhoneIcon,
+  SunIcon,
+} from './icons';
 
 interface HeaderProps {
   theme: Theme;
   toggleTheme: () => void;
 }
 
-const byPrefixAndName = {
-  fas: {
-    language: faLanguage,
-  },
-};
+/**
+ * The nav carries exactly one primary action, and it only ever points at
+ * something a visitor can actually reach. While the app is unreleased that is
+ * the live hub; once it ships the same slot becomes the download anchor, so the
+ * nav never advertises a destination that dead-ends in a "coming soon" panel.
+ */
+const PRIMARY_NAV_ACTION = APP_AVAILABLE
+  ? { href: '#app', labelKey: 'nav.getApp', isExternal: false }
+  : { href: PRODUCT_ENTRIES[0].href, labelKey: 'nav.hub', isExternal: true };
 
 const LanguageMenu: React.FC = () => {
   const { locale, setLocale, t } = useI18n();
@@ -38,11 +49,18 @@ const LanguageMenu: React.FC = () => {
     });
   };
 
-  useEffect(() => {
+  /*
+   * Layout effect, not effect: the menu is portalled with its position in
+   * state, so a passive effect would let the browser paint one frame at the
+   * placeholder coordinates before the measurement lands - which reads as the
+   * panel flying up to the top of the window and then dropping into place.
+   * Measuring before paint means only the final position is ever displayed.
+   */
+  useLayoutEffect(() => {
     if (!open) return;
 
     updatePosition();
-    menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+    menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus({ preventScroll: true });
     window.addEventListener('resize', updatePosition);
     document.addEventListener('wheel', closeMenu, { passive: true });
     document.addEventListener('touchmove', closeMenu, { passive: true });
@@ -118,10 +136,14 @@ const LanguageMenu: React.FC = () => {
         title={currentLocale.label}
         className="inline-flex h-11 w-11 items-center justify-center gap-1.5 rounded-full text-primary transition-[background-color,transform] duration-200 hover:bg-surface active:scale-[0.96] sm:h-10 sm:w-auto sm:px-3"
       >
-        <FontAwesomeIcon
-          icon={byPrefixAndName.fas.language}
-          className="h-4 w-4 shrink-0 text-secondary"
-        />
+        {/*
+         * Optically matched to the theme glyph next to it, not numerically: the
+         * translate mark keeps its ink well inside its viewBox while the sun and
+         * moon fill theirs, so an equal 18px box reads visibly smaller. One step
+         * larger evens them out. Same colour too - both are peer utility buttons,
+         * and a muted tint made the icon-only mobile variant look disabled.
+         */}
+        <LanguageIcon className="h-5 w-5 shrink-0" />
         <span className="hidden text-sm font-medium sm:inline">{currentLocale.label}</span>
       </button>
 
@@ -205,13 +227,20 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
 
       <nav aria-label={t('nav.primary')} className="flex shrink-0 items-center gap-1.5">
         <a
-          href="#app"
-          aria-label={t('nav.getApp')}
+          href={PRIMARY_NAV_ACTION.href}
+          aria-label={t(PRIMARY_NAV_ACTION.labelKey)}
+          {...(PRIMARY_NAV_ACTION.isExternal
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : {})}
           className="group hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-selected px-4 text-sm font-semibold text-link transition-[background-color,transform] duration-200 hover:bg-brand/20 active:scale-[0.96] sm:inline-flex sm:h-10 sm:px-5 dark:bg-white/5 dark:hover:bg-white/10"
         >
-          <PhoneIcon className="h-4 w-4" />
-          <span aria-hidden="true">{t('nav.getApp')}</span>
-          <ArrowDownRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+          {!PRIMARY_NAV_ACTION.isExternal && <PhoneIcon className="h-4 w-4" />}
+          <span aria-hidden="true">{t(PRIMARY_NAV_ACTION.labelKey)}</span>
+          {PRIMARY_NAV_ACTION.isExternal ? (
+            <ArrowUpRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          ) : (
+            <ArrowDownRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+          )}
         </a>
 
         <LanguageMenu />
