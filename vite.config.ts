@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // Relative asset paths so the build works on both:
-  // - https://<user>.github.io/<repo>/ (project pages)
-  // - https://yourtj.de (custom domain)
-  base: './',
+  // Netlify serves the build from the domain root, so assets are requested with
+  // absolute paths. Relative paths would break when Netlify's SPA fallback
+  // returns index.html for a nested URL such as /foo/bar.
+  base: '/',
 });

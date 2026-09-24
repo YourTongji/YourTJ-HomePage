@@ -1,0 +1,37 @@
+# Netlify deployment for https://yourtj.de
+# Static Vite build published from the repository root; Netlify installs with
+# `npm ci` (package-lock.json is committed) before running the build command.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Node 22 LTS: Vite 6 requires >= 18 and 22 keeps the build off an EOL line.
+  NODE_VERSION = "22"
+
+# SPA fallback: paths that do not match a file in dist (a typo, or a future
+# client-side route) render the homepage instead of Netlify's default 404.
+# Real files always win over this rule, so assets keep returning 404 when missing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # HTML must be revalidated: a cached copy would keep requesting asset hashes
+    # that no longer exist after the next deploy.
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), geolocation=(), microphone=()"
+    Strict-Transport-Security = "max-age=31536000"
+
+# Declared after /* so this Cache-Control wins for fingerprinted bundles.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
