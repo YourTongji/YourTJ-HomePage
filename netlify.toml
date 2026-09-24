@@ -12,7 +12,9 @@
 
 # SPA fallback: paths that do not match a file in dist (a typo, or a future
 # client-side route) render the homepage instead of Netlify's default 404.
-# Real files always win over this rule, so assets keep returning 404 when missing.
+# Existing files always win over this rule, but a stale asset URL matches
+# nothing and therefore also falls back to the homepage - which is why
+# index.html below is never cached in the browser.
 [[redirects]]
   from = "/*"
   to = "/index.html"
