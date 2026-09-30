@@ -13,8 +13,9 @@ const DeferredAppShowcase = React.lazy(() =>
 const DeferredProductPreview = React.lazy(() =>
   import('./components/ProductPreview').then(({ ProductPreview }) => ({ default: ProductPreview })),
 );
+const loadAppDownload = () => import('./components/AppDownloadSection');
 const DeferredAppDownload = React.lazy(() =>
-  import('./components/AppDownloadSection').then(({ AppDownloadSection }) => ({ default: AppDownloadSection })),
+  loadAppDownload().then(({ AppDownloadSection }) => ({ default: AppDownloadSection })),
 );
 const DeferredContributors = React.lazy(() =>
   import('./components/ContributorsSection').then(({ ContributorsSection }) => ({ default: ContributorsSection })),
@@ -27,13 +28,14 @@ const DeferredSection: React.FC<{
   id: string;
   className: string;
   children: React.ReactNode;
-}> = ({ id, className, children }) => {
+  activate?: boolean;
+}> = ({ id, className, children, activate = false }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const isNearViewport = useInViewOnce(ref, '700px');
 
   return (
     <div id={id} ref={ref} className={className}>
-      {isNearViewport && <React.Suspense fallback={null}>{children}</React.Suspense>}
+      {(isNearViewport || activate) && <React.Suspense fallback={null}>{children}</React.Suspense>}
     </div>
   );
 };
@@ -84,6 +86,20 @@ const SkipLink: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const [downloadRequested, setDownloadRequested] = React.useState(false);
+
+  React.useLayoutEffect(() => {
+    if (!downloadRequested) return;
+    if (window.location.hash !== '#download') window.history.pushState(null, '', '#download');
+    document.getElementById('download')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  }, [downloadRequested]);
+
+  const preloadDownload = (event: React.SyntheticEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('a[href="#download"]')) {
+      void loadAppDownload().catch(() => {});
+    }
+  };
 
   const onClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target;
@@ -91,6 +107,16 @@ const AppContent: React.FC = () => {
     if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     event.preventDefault();
+    if (!downloadRequested) {
+      void loadAppDownload().then(
+        () => setDownloadRequested(true),
+        () => {
+          if (window.location.hash !== link.hash) window.history.pushState(null, '', link.hash);
+          document.getElementById(link.hash.slice(1))?.scrollIntoView({ behavior: 'instant', block: 'start' });
+        },
+      );
+      return;
+    }
     if (window.location.hash !== link.hash) window.history.pushState(null, '', link.hash);
     // Skip the pinned scrollytelling stage, as the previously eager-loaded trigger did.
     document.getElementById(link.hash.slice(1))?.scrollIntoView({ behavior: 'instant', block: 'start' });
@@ -103,7 +129,13 @@ const AppContent: React.FC = () => {
   }, []);
 
   return (
-    <div id="top" onClickCapture={onClickCapture} className="relative flex min-h-dvh flex-col overflow-x-clip bg-page text-primary">
+    <div
+      id="top"
+      onClickCapture={onClickCapture}
+      onPointerOverCapture={preloadDownload}
+      onFocusCapture={preloadDownload}
+      className="relative flex min-h-dvh flex-col overflow-x-clip bg-page text-primary"
+    >
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
         <div className="mesh-gradient absolute inset-0" />
       </div>
@@ -158,6 +190,7 @@ const AppContent: React.FC = () => {
             <DeferredSection
               id="download"
               className="scroll-mt-24 relative mt-14 min-h-[500px] sm:mt-20 md:mt-28 md:min-h-[506px]"
+              activate={downloadRequested}
             >
               <DeferredAppDownload />
             </DeferredSection>
