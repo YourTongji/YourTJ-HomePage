@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import './SpecularButton.css';
 
 const PAD = 20;
@@ -146,6 +147,7 @@ export const SpecularButton: React.FC<SpecularButtonProps> = ({
   rel,
 }) => {
   const btnRef = useRef<HTMLElement | null>(null);
+  const hasEntered = useInViewOnce(btnRef, '80px');
   const fxRef = useRef<HTMLSpanElement | null>(null);
   const propsRef = useRef<{
     radius: number;
@@ -197,7 +199,7 @@ export const SpecularButton: React.FC<SpecularButtonProps> = ({
       (window.matchMedia('(pointer: coarse)').matches ||
         window.innerWidth < 768 ||
         window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    if (isMobileOrTouch) return;
+    if (isMobileOrTouch || !hasEntered) return;
 
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
     let renderer: Renderer | null = null;
@@ -403,7 +405,7 @@ export const SpecularButton: React.FC<SpecularButtonProps> = ({
       if (gl.canvas.parentNode === fx) fx.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
-  }, []);
+  }, [hasEntered]);
 
   const styleVars = {
     '--sb-radius': `${radius}px`,

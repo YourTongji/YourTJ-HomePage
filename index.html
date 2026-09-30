@@ -3,12 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Umami 访问统计：站点 ID 对应 umi.yourtj.de -->
-    <script
-      defer
-      src="https://umi.yourtj.de/script.js"
-      data-website-id="296b54f1-13c3-4356-a5ae-0a786c06330f"
-    ></script>
+    <!-- Umami 访问统计：待首屏空闲后加载，避免抢占渲染主线程。 -->
+    <script>
+      window.addEventListener(
+        'load',
+        () =>
+          window.setTimeout(() => {
+            const script = document.createElement('script');
+            script.src = 'https://umi.yourtj.de/script.js';
+            script.dataset.websiteId = '296b54f1-13c3-4356-a5ae-0a786c06330f';
+            document.head.appendChild(script);
+          }, 2000),
+        { once: true },
+      );
+    </script>
     <script>
       (() => {
         try {
@@ -54,10 +62,14 @@
     <meta property="og:image" content="https://yourtj.de/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.cn" />
     <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.cn/s/fasterone/v20/H4ciBXCHmdfClFb-vWhf-LyYh4y0YzA.woff2" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.cn/css2?family=Faster+One&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.cn/css2?family=Faster+One&display=swap" /></noscript>
 
     <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%favicon-16.png" />

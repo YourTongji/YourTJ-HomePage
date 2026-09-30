@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import Matter from 'matter-js';
+import type Matter from 'matter-js';
 import './FolderFloat.css';
-
-const { Bodies, Body, Composite, Engine } = Matter;
 
 export type FolderItem =
   | string
@@ -153,6 +151,7 @@ interface DragState {
 
 interface WorldState {
   engine: Matter.Engine | null;
+  matter: typeof Matter | null;
   bodies: Matter.Body[];
   sizes: ItemSize[];
   raf: number;
@@ -204,6 +203,7 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const world = useRef<WorldState>({
     engine: null,
+    matter: null,
     bodies: [],
     sizes: [],
     raf: 0,
@@ -213,6 +213,8 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     zone: null,
     live: false,
   });
+  const openRef = useRef(open);
+  openRef.current = open;
   const latest = useRef<{
     onSelect?: (value: string, index: number) => void;
     onOpenChange?: (open: boolean) => void;
@@ -268,9 +270,10 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
         el.style.setProperty('--x', `${b.position.x.toFixed(1)}px`);
         el.style.setProperty('--y', `${(b.position.y - w.sizes[i].h / 2).toFixed(1)}px`);
       });
-      Composite.clear(w.engine.world, false, true);
-      Engine.clear(w.engine);
+      w.matter?.Composite.clear(w.engine.world, false, true);
+      w.matter?.Engine.clear(w.engine);
       w.engine = null;
+      w.matter = null;
     }
     w.bodies = [];
     w.drag = null;
@@ -278,14 +281,19 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     setLive(false);
   }, []);
 
-  const startPhysics = useCallback(() => {
+  const startPhysics = useCallback(async () => {
     const w = world.current;
     if (w.engine) return;
     const els = pillRefs.current.slice(0, n);
     if (els.some((el) => !el)) return;
 
+    const { default: Matter } = await import('matter-js');
+    if (!openRef.current || w.engine) return;
+    const { Bodies, Body, Composite, Engine } = Matter;
+
     const engine = Engine.create({ gravity: { x: 0, y: 0 } });
     engine.enableSleeping = false;
+    w.matter = Matter;
     w.engine = engine;
     w.sizes = els.map((el) => ({ w: el?.offsetWidth ?? 0, h: el?.offsetHeight ?? 0 }));
     const ys = pos.map((p) => p.y);
@@ -471,6 +479,8 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     const { w: bw, h: bh } = w.sizes[i];
     const z = w.zone;
     if (!z) return;
+    const Body = w.matter?.Body;
+    if (!Body) return;
     const p = pointerAt(e);
     const x = Math.min(z.right - bw / 2, Math.max(z.left + bw / 2, p.x + d.dx));
     const y = Math.min(z.bottom - bh / 2, Math.max(z.top + bh / 2, p.y + d.dy));

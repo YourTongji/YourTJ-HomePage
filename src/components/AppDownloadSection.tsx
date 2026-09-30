@@ -1,8 +1,8 @@
 import React from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import { APP_LINKS } from '../constants';
 import { useI18n } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import { assetUrl } from '../utils/assets';
 import {
   AndroidIcon,
@@ -13,7 +13,13 @@ import {
 } from './icons';
 import { Reveal } from './Reveal';
 import { SpecularButton } from './SpecularButton';
-import { ShapeBlur } from './ShapeBlur';
+
+const DeferredQRCode = React.lazy(() =>
+  import('qrcode.react').then(({ QRCodeSVG }) => ({ default: QRCodeSVG })),
+);
+const DeferredShapeBlur = React.lazy(() =>
+  import('./ShapeBlur').then(({ ShapeBlur }) => ({ default: ShapeBlur })),
+);
 
 interface PlatformActionProps {
   href: string;
@@ -40,9 +46,14 @@ const PlatformAction: React.FC<PlatformActionProps> = ({
   platform,
 }) => {
   const { t } = useI18n();
+  const [showQr, setShowQr] = React.useState(false);
 
   return (
-    <div className="relative group/qr">
+    <div
+      className="relative group/qr"
+      onMouseEnter={() => setShowQr(true)}
+      onFocusCapture={() => setShowQr(true)}
+    >
       {/* Specular Action Button */}
       <SpecularButton
         href={href}
@@ -82,27 +93,31 @@ const PlatformAction: React.FC<PlatformActionProps> = ({
 
       {/* Desktop Hover Floating QR Bubble (hidden on mobile/touch, triggers on hover on desktop) */}
       <div
-        className="hidden md:block absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 scale-95 group-hover/qr:pointer-events-auto group-hover/qr:opacity-100 group-hover/qr:translate-y-0 group-hover/qr:scale-100 transition-[opacity,transform] duration-200 ease-out will-change-[transform,opacity]"
+        className="hidden md:block absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 scale-95 group-hover/qr:pointer-events-auto group-hover/qr:opacity-100 group-hover/qr:translate-y-0 group-hover/qr:scale-100 group-focus-within/qr:pointer-events-auto group-focus-within/qr:opacity-100 group-focus-within/qr:translate-y-0 group-focus-within/qr:scale-100 transition-[opacity,transform] duration-200 ease-out will-change-[transform,opacity]"
         role="tooltip"
         aria-hidden="true"
       >
         <div className="w-[164px] rounded-2xl border border-edge/90 bg-surface-raised/95 backdrop-blur-xl p-2.5 pb-2 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_40px_-6px_rgba(0,0,0,0.7),0_4px_14px_-2px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 flex flex-col items-center relative">
           {/* QR Code Container with subtle inset border */}
           <div className="relative p-1.5 rounded-xl bg-white dark:bg-zinc-950 border border-edge/70 shadow-2xs flex items-center justify-center">
-            <QRCodeSVG
-              value={href}
-              size={120}
-              level="H"
-              bgColor="transparent"
-              fgColor={theme === 'dark' ? '#f4f4f5' : '#09090b'}
-              marginSize={1}
-              imageSettings={{
-                src: '',
-                height: 26,
-                width: 26,
-                excavate: true,
-              }}
-            />
+            {showQr && (
+              <React.Suspense fallback={null}>
+                <DeferredQRCode
+                  value={href}
+                  size={120}
+                  level="H"
+                  bgColor="transparent"
+                  fgColor={theme === 'dark' ? '#f4f4f5' : '#09090b'}
+                  marginSize={1}
+                  imageSettings={{
+                    src: '',
+                    height: 26,
+                    width: 26,
+                    excavate: true,
+                  }}
+                />
+              </React.Suspense>
+            )}
             {/* Center System Icon Badge */}
             <div className="absolute inset-0 m-auto h-6 w-6 rounded-md bg-surface-raised border border-edge/80 shadow-2xs flex items-center justify-center pointer-events-none">
               {platform === 'ios' ? (
@@ -193,6 +208,8 @@ const probeAndroidRoute = (route: AndroidRoute): Promise<number> =>
 export const AppDownloadSection: React.FC = () => {
   const { t } = useI18n();
   const { theme } = useTheme();
+  const sectionRef = React.useRef<HTMLElement>(null);
+  const shapeBlurNear = useInViewOnce(sectionRef, '250px');
   const [savedAndroidRoute] = React.useState(cachedAndroidRoute);
   const [androidDownloadUrl, setAndroidDownloadUrl] = React.useState(() =>
     routeUrl(savedAndroidRoute ?? ANDROID_ROUTES[0], APP_LINKS.androidAcceleratedApk),
@@ -202,39 +219,55 @@ export const AppDownloadSection: React.FC = () => {
     if (savedAndroidRoute) return;
 
     let mounted = true;
-    void Promise.all(
-      ANDROID_ROUTES.map(async (route) => ({
-        route,
-        duration: await probeAndroidRoute(route),
-      })),
-    ).then((results) => {
-      if (!mounted) return;
+    const probeRoutes = () => {
+      void Promise.all(
+        ANDROID_ROUTES.map(async (route) => ({
+          route,
+          duration: await probeAndroidRoute(route),
+        })),
+      ).then((results) => {
+        if (!mounted) return;
 
-      const selected =
-        results
-          .filter((result) => Number.isFinite(result.duration))
-          .sort((a, b) => a.duration - b.duration)[0]?.route ?? ANDROID_ROUTES[0];
-      try {
-        window.localStorage.setItem(
-          ANDROID_ROUTE_CACHE_KEY,
-          JSON.stringify({ id: selected.id, expiresAt: Date.now() + ANDROID_ROUTE_TTL_MS }),
-        );
-      } catch {
-        // The download remains usable when browser storage is unavailable.
-      }
-      setAndroidDownloadUrl(routeUrl(selected, APP_LINKS.androidAcceleratedApk));
-    });
+        const selected =
+          results
+            .filter((result) => Number.isFinite(result.duration))
+            .sort((a, b) => a.duration - b.duration)[0]?.route ?? ANDROID_ROUTES[0];
+        try {
+          window.localStorage.setItem(
+            ANDROID_ROUTE_CACHE_KEY,
+            JSON.stringify({ id: selected.id, expiresAt: Date.now() + ANDROID_ROUTE_TTL_MS }),
+          );
+        } catch {
+          // The download remains usable when browser storage is unavailable.
+        }
+        setAndroidDownloadUrl(routeUrl(selected, APP_LINKS.androidAcceleratedApk));
+      });
+    };
+
+    const section = sectionRef.current;
+    let observer: IntersectionObserver | null = null;
+    if (!section || !('IntersectionObserver' in window)) {
+      probeRoutes();
+    } else {
+      observer = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer?.disconnect();
+        probeRoutes();
+      }, { rootMargin: '1000px 0px' });
+      observer.observe(section);
+    }
 
     return () => {
       mounted = false;
+      observer?.disconnect();
     };
   }, [savedAndroidRoute]);
 
   return (
     <section
-      id="download"
+      ref={sectionRef}
       aria-labelledby="app-download-title"
-      className="scroll-mt-24 mt-14 sm:mt-20 md:mt-28 pt-8 sm:pt-12 md:pt-16"
+      className="content-auto pt-8 sm:pt-12 md:pt-16"
     >
       <Reveal className="mx-auto max-w-page px-4 pb-6 sm:px-6 sm:pb-8 md:pb-10">
         <div className="glass-panel !overflow-visible rounded-3xl border border-edge/80 shadow-lift relative">
@@ -318,16 +351,20 @@ export const AppDownloadSection: React.FC = () => {
                 <div className="relative group flex items-center justify-center w-48 h-48 sm:w-56 sm:h-56">
                   {/* React Bits ShapeBlur WebGL background */}
                   <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-                    <ShapeBlur
-                      variation={0}
-                      pixelRatioProp={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 2}
-                      shapeSize={1.4}
-                      roundness={0.45}
-                      borderSize={0.065}
-                      circleSize={0.4}
-                      circleEdge={0.7}
-                      color={theme === 'dark' ? '#38bdf8' : '#036099'}
-                    />
+                    {shapeBlurNear && (
+                      <React.Suspense fallback={null}>
+                        <DeferredShapeBlur
+                          variation={0}
+                          pixelRatioProp={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 2}
+                          shapeSize={1.4}
+                          roundness={0.45}
+                          borderSize={0.065}
+                          circleSize={0.4}
+                          circleEdge={0.7}
+                          color={theme === 'dark' ? '#38bdf8' : '#036099'}
+                        />
+                      </React.Suspense>
+                    )}
                   </div>
 
                   {/* Solid white backing for contrast and optical depth so SVG logo doesn't sit directly on dark */}

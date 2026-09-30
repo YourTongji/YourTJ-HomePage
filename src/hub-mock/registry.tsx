@@ -1,8 +1,9 @@
 import React from 'react';
-import { HubCourses } from './pages/HubCourses';
-import { HubHome } from './pages/HubHome';
-import { HubSchedule } from './pages/HubSchedule';
-import { HubWiki } from './pages/HubWiki';
+
+const HubHome = React.lazy(() => import('./pages/HubHome').then(({ HubHome }) => ({ default: HubHome })));
+const HubCourses = React.lazy(() => import('./pages/HubCourses').then(({ HubCourses }) => ({ default: HubCourses })));
+const HubSchedule = React.lazy(() => import('./pages/HubSchedule').then(({ HubSchedule }) => ({ default: HubSchedule })));
+const HubWiki = React.lazy(() => import('./pages/HubWiki').then(({ HubWiki }) => ({ default: HubWiki })));
 
 /*
  * One React page per product surface, keyed by the slide id the marketing site
@@ -10,7 +11,7 @@ import { HubWiki } from './pages/HubWiki';
  * keyed rather than positional means a slide can be reordered or removed in
  * constants.ts without silently showing the wrong page here.
  */
-const HUB_PREVIEW_PAGES: Record<string, React.FC> = {
+const HUB_PREVIEW_PAGES: Record<string, React.LazyExoticComponent<React.FC>> = {
   'hub-home': HubHome,
   'hub-courses': HubCourses,
   'hub-schedule': HubSchedule,

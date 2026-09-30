@@ -140,9 +140,8 @@ export const ContributorsSection: React.FC = () => {
 
   return (
     <section
-      id="contributors"
       aria-labelledby="contributors-title"
-      className="scroll-mt-24 relative pt-6 pb-16 sm:pt-8 sm:pb-24"
+      className="relative pt-6 pb-16 sm:pt-8 sm:pb-24"
     >
       {/*
         Spotlight LightRays (React Bits):

@@ -114,6 +114,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({ open, onClose }) =
   return (
     <div
       aria-hidden={!open}
+      {...(!open ? ({ inert: '' } as { inert: string }) : {})}
       style={{
         position: 'absolute',
         inset: 0,

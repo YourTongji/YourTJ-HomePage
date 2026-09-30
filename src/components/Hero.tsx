@@ -1,12 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { AppDevice } from '../app-preview/AppDevice';
-import { screenById, type AppScreenId } from '../app-preview/screens/registry';
-import { BottomNav, Fab, ComposeMenu } from '../app-preview/screens/Home';
-import { DEVICE_H, DEVICE_W, SW } from '../app-preview/ui/Phone';
-import { AccountDrawer } from '../app-preview/ui/AccountDrawer';
-import { useFitScale } from '../app-preview/useFitScale';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useTheme } from '../hooks/useTheme';
 import { useI18n } from '../i18n';
 import { BrandMotionLogo } from './BrandMotionLogo';
@@ -18,165 +13,14 @@ import { SpecularButton } from './SpecularButton';
 
 gsap.registerPlugin(useGSAP);
 
-/**
- * The shell's four branches, in GfShellDestination's order (router.dart):
- * `/` HomePage, `/campus` CampusPage, `/messages` MessagesPage, `/profile`
- * ProfilePage. Each id below is that page and nothing else — 消息 is the
- * conversation list, not the thread it pushes, and 我的 is the viewer's own
- * profile, not the one the `/u/:userId` route shows.
- *
- * The hero, rather than the page, owns the nav because the shell does: the app
- * keeps one `GfBottomNavigation` on screen across a branch switch
- * (StatefulShellRoute), so the mock draws it as an overlay the branch content
- * changes under, exactly like the shell's Scaffold — and a pushed route
- * (a thread, someone else's profile) would be drawn by that page instead.
- */
-const SHELL_SCREENS: AppScreenId[] = ['home', 'campus', 'notifications', 'messages'];
-
-/** HomePage hangs the publish FAB off the home branch. */
-const SHELL_FAB_BRANCH = 0;
-
-/**
- * The app, in a real device, as the hero's visual.
- *
- * This replaces the card that used to sit here wearing a "coming soon" veil.
- * The app is downloadable now, so the honest hero visual is the app itself: the
- * actual home feed, rendered from the same components the promo film used, in
- * the same device frame. Two small motions keep it alive without turning the
- * hero into a demo: a slow float (CSS, so it costs nothing on the main thread)
- * and a pointer tilt that answers the cursor on precise pointers only.
- *
- * The bottom nav is live. Tapping a key switches the branch above it the way the
- * real shell does (`StatefulShellRoute` + `GfBottomNavigation`), and the nav is
- * drawn by this component rather than by each page so that it persists across
- * the switch instead of unmounting with the screen.
- */
-const HeroDevice: React.FC = () => {
-  const stageHostRef = useRef<HTMLDivElement>(null);
-  const scale = useFitScale(stageHostRef, DEVICE_W, DEVICE_H, { max: 0.72, min: 0.3 });
-  const tiltRef = useRef<HTMLDivElement>(null);
-  const [shellIndex, setShellIndex] = useState(0);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [composeOpen, setComposeOpen] = useState(false);
-
-  const entry = screenById(SHELL_SCREENS[shellIndex]);
-
-  useGSAP(
-    () => {
-      const host = stageHostRef.current;
-      const tiltTarget = tiltRef.current;
-      if (!host || !tiltTarget) return;
-
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const finePointer = window.matchMedia('(pointer: fine)').matches;
-      if (reduceMotion || !finePointer) return;
-
-      const rotateY = gsap.quickTo(tiltTarget, 'rotationY', { duration: 0.7, ease: 'power3.out' });
-      const rotateX = gsap.quickTo(tiltTarget, 'rotationX', { duration: 0.7, ease: 'power3.out' });
-
-      const onPointerMove = (event: PointerEvent) => {
-        const rect = host.getBoundingClientRect();
-        const horizontal = (event.clientX - rect.left) / rect.width - 0.5;
-        const vertical = (event.clientY - rect.top) / rect.height - 0.5;
-        rotateY(horizontal * 13);
-        rotateX(vertical * -9);
-      };
-
-      const onPointerLeave = () => {
-        rotateY(0);
-        rotateX(0);
-      };
-
-      host.addEventListener('pointermove', onPointerMove);
-      host.addEventListener('pointerleave', onPointerLeave);
-      return () => {
-        host.removeEventListener('pointermove', onPointerMove);
-        host.removeEventListener('pointerleave', onPointerLeave);
-      };
-    },
-    { dependencies: [scale] },
-  );
-
-  return (
-    <div
-      ref={stageHostRef}
-      className="flex h-[clamp(430px,62vh,620px)] w-full items-center justify-center"
-      style={{ perspective: 1400 }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: DEVICE_W * scale,
-          height: DEVICE_H * scale,
-        }}
-      >
-        <div
-          ref={tiltRef}
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: DEVICE_W,
-            height: DEVICE_H,
-            transform: `scale(${scale})`,
-            transformOrigin: '0 0',
-          }}
-        >
-          <div className="device-float h-full w-full">
-            <AppDevice
-              entry={entry}
-              screenWidth={SW}
-              glare
-              renderOptions={{
-                shellNav: true,
-                onOpenDrawer: () => {
-                  setDrawerOpen(true);
-                  setComposeOpen(false);
-                },
-              }}
-              // The shell's branch content cross-fades on switch; the nav
-              // (drawn as an overlay) stays put.
-              screenClassName="motion-safe:animate-fade-up"
-              overlay={
-                <>
-                  {/*
-                    The shell's own Scaffold hangs a publish FAB off the home
-                    branch (router.dart). Tapping it opens the 3 publishing formats menu
-                    replicated 1:1 from Flutter's compose_menu.dart.
-                  */}
-                  {shellIndex === SHELL_FAB_BRANCH && (
-                    <>
-                      <Fab
-                        open={composeOpen ? 1 : 0}
-                        onClick={() => setComposeOpen((prev) => !prev)}
-                      />
-                      <ComposeMenu
-                        open={composeOpen}
-                        onClose={() => setComposeOpen(false)}
-                      />
-                    </>
-                  )}
-                  <BottomNav
-                    active={shellIndex}
-                    onSelect={(idx) => {
-                      setShellIndex(idx);
-                      setComposeOpen(false);
-                    }}
-                  />
-                  <AccountDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-                </>
-              }
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+const DeferredHeroDevice = React.lazy(() =>
+  import('./HeroDevice').then(({ HeroDevice }) => ({ default: HeroDevice })),
+);
 
 export const Hero: React.FC = () => {
   const { t } = useI18n();
   const { theme } = useTheme();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const brandLockupRef = useRef<HTMLDivElement>(null);
   const logoHostRef = useRef<HTMLDivElement>(null);
@@ -386,9 +230,13 @@ export const Hero: React.FC = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block motion-safe:animate-fade-up [animation-delay:220ms]">
-            <HeroDevice />
-          </div>
+          {isDesktop && (
+            <div className="hidden lg:block motion-safe:animate-fade-up [animation-delay:220ms]">
+              <React.Suspense fallback={<div aria-hidden="true" className="h-[clamp(430px,62vh,620px)] w-full" />}>
+                <DeferredHeroDevice />
+              </React.Suspense>
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -72,6 +72,7 @@ export const ComposeMenu: React.FC<ComposeMenuProps> = ({
         overflow: 'hidden',
       }}
       aria-hidden={!open}
+      {...(!open ? ({ inert: '' } as { inert: string }) : {})}
     >
       {/* Barrier scrim: Theme.of(context).colorScheme.scrim */}
       <div

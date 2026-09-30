@@ -97,7 +97,7 @@ export const CommunitySection: React.FC = () => {
   const { theme } = useTheme();
 
   return (
-    <section id="community" aria-labelledby="community-title" className="scroll-mt-24">
+    <section aria-labelledby="community-title" className="content-auto-community">
       <div className="mx-auto max-w-page px-4 pb-20 sm:px-6 md:pb-28">
         <Reveal className="max-w-[560px]">
           <h2

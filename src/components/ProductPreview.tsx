@@ -854,7 +854,7 @@ interface PreviewWindowProps {
  * PreviewWindow: a pure, flush presentation card hosting the live rendered product page.
  * On desktop, mounts all 4 slides into absolute layers so GSAP can scrub smooth cross-fades.
  */
-const PreviewWindow: React.FC<PreviewWindowProps> = ({
+const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
   slide,
   index = 0,
   frameRef,
@@ -891,6 +891,7 @@ const PreviewWindow: React.FC<PreviewWindowProps> = ({
         <div ref={driftRef} className="absolute inset-0">
           <div
             aria-hidden="true"
+            {...({ inert: '' } as { inert: string })}
             className="absolute left-0 top-0 origin-top-left select-none"
             style={{
               width: HUB_CANVAS_WIDTH,
@@ -898,7 +899,7 @@ const PreviewWindow: React.FC<PreviewWindowProps> = ({
               transform: `scale(${scale})`,
             }}
           >
-            {isDesktop ? (
+            <React.Suspense fallback={null}>{isDesktop ? (
               PREVIEW_SLIDES.map((s, i) => {
                 const PageComp = hubPreviewPageFor(s.id);
                 return (
@@ -920,12 +921,13 @@ const PreviewWindow: React.FC<PreviewWindowProps> = ({
                 {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
               </div>
             )}
+            </React.Suspense>
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
 
 export const ProductPreview: React.FC = () => {
   const { t } = useI18n();
@@ -1127,7 +1129,7 @@ export const ProductPreview: React.FC = () => {
   const titles = PREVIEW_SLIDES.map((slide) => t(slide.titleKey));
 
   return (
-    <section ref={scopeRef} id="preview" aria-label={t('preview.section.label')} className="scroll-mt-24">
+    <section ref={scopeRef} aria-label={t('preview.section.label')} className="scroll-mt-24">
       {isDesktop ? (
         /* Desktop Pinned Scrollytelling Stage (pinned centered at optical eye-level) */
         <div ref={stagePinRef} className="w-full py-8">
@@ -1146,7 +1148,7 @@ export const ProductPreview: React.FC = () => {
               {/* Precision Chapter Progress Scrubber */}
               <div
                 className="flex items-center gap-3 rounded-full border border-edge/70 bg-surface-subtle/70 px-3.5 py-1.5 shadow-2xs backdrop-blur-md"
-                role="tablist"
+                role="group"
                 aria-label="Story chapters"
               >
                 {/* 4 Interactive Segment Bars */}
@@ -1159,12 +1161,14 @@ export const ProductPreview: React.FC = () => {
                         type="button"
                         onClick={() => scrollToChapter(idx)}
                         aria-label={`Jump to ${step.label}`}
-                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                        className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center"
+                      >
+                        <span className={`h-1.5 rounded-full transition-all duration-300 ${
                           isActive
                             ? 'w-7 bg-link shadow-xs'
                             : 'w-2 bg-edge-strong/50 hover:bg-edge-strong hover:w-3.5'
-                        }`}
-                      />
+                        }`} />
+                      </button>
                     );
                   })}
                 </div>

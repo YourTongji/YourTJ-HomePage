@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+.content-auto-community {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 538px;
+}
+
+@media (min-width: 1024px) {
+  .content-auto-community {
+    contain-intrinsic-size: auto 292px;
+  }
+}
+
 /*
  * Design tokens derived from YourTJ_CoreDesignToken.fig
  * Core / Primitives + Core / Semantic Colors + Core / Typography.
@@ -238,10 +254,16 @@ html.dark {
     border-radius: 999px;
   }
 
-  /* Scroll-aware condense: scales from the top edge, expands on scroll-up. */
+  /* Compact after leaving the top; desktop keeps the unscaled compact width. */
   .nav-compact {
     transform: scale(0.94);
     opacity: 0.88;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-compact {
+      transform: scale(1);
+    }
   }
 
   .language-menu {
@@ -1550,5 +1572,3 @@ html.dark {
     overflow: hidden;
   }
 }
-
-

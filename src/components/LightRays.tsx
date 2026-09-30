@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Renderer, Program, Triangle, Mesh } from 'ogl';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import './LightRays.css';
 
 export type RaysOrigin =
@@ -83,6 +84,7 @@ export const LightRays: React.FC<LightRaysProps> = ({
   style,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewOnce(containerRef, '250px 0px 250px 0px');
   const uniformsRef = useRef<Record<string, { value: any }> | null>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
@@ -114,7 +116,7 @@ export const LightRays: React.FC<LightRaysProps> = ({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !hasEntered) return;
 
     let renderer: Renderer;
     let gl: any;
@@ -370,6 +372,7 @@ void main() {
     mouseInfluence,
     noiseAmount,
     distortion,
+    hasEntered,
   ]);
 
   useEffect(() => {

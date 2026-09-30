@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 
 const vertexShader = /* glsl */ `
 varying vec2 v_texcoord;
@@ -152,11 +153,12 @@ export const ShapeBlur: React.FC<ShapeBlurProps> = ({
   style,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const hasEntered = useInViewOnce(mountRef);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
-    if (!mount) return;
+    if (!mount || !hasEntered) return;
 
     let active = true;
     let animationFrameId: number;
@@ -290,7 +292,7 @@ export const ShapeBlur: React.FC<ShapeBlurProps> = ({
       renderer.dispose();
       renderer.forceContextLoss();
     };
-  }, [variation]);
+  }, [variation, hasEntered]);
 
   useEffect(() => {
     const mat = materialRef.current;

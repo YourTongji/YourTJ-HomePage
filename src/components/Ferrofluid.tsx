@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Renderer, Program, Mesh, Triangle } from 'ogl';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import './Ferrofluid.css';
 
 const MAX_COLORS = 8;
@@ -236,7 +237,9 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
   style,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasEntered = useInViewOnce(containerRef);
   const rafRef = useRef<number | null>(null);
+  const uniformsRef = useRef<Record<string, { value: any }> | null>(null);
   const programRef = useRef<Program | null>(null);
   const meshRef = useRef<Mesh | null>(null);
   const geometryRef = useRef<Triangle | null>(null);
@@ -246,7 +249,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !hasEntered) return;
 
     const effectiveDpr = dpr ?? (
       typeof window !== 'undefined'
@@ -305,6 +308,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       uMouseStrength: { value: mouseStrength },
       uMouseRadius: { value: mouseRadius },
     };
+    uniformsRef.current = uniforms;
 
     const program = new Program(gl, { vertex, fragment, uniforms });
     programRef.current = program;
@@ -411,11 +415,11 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       geometryRef.current = null;
       meshRef.current = null;
       rendererRef.current = null;
+      uniformsRef.current = null;
     };
   }, [
     dpr,
     paused,
-    colors,
     speed,
     scale,
     turbulence,
@@ -423,14 +427,27 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     rimWidth,
     sharpness,
     shimmer,
-    glow,
     flowDirection,
-    opacity,
     mouseInteraction,
     mouseStrength,
     mouseRadius,
     mouseDampening,
+    hasEntered,
   ]);
+
+  useEffect(() => {
+    const uniforms = uniformsRef.current;
+    if (!uniforms) return;
+
+    const { arr, count, avg } = prepColors(colors);
+    for (let index = 0; index < MAX_COLORS; index++) {
+      uniforms[`uColor${index}`].value = arr[index];
+    }
+    uniforms.uColorCount.value = count;
+    uniforms.uMouseColor.value = avg;
+    uniforms.uGlow.value = glow;
+    uniforms.uOpacity.value = opacity;
+  }, [colors, glow, opacity]);
 
   return (
     <div

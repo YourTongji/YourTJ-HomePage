@@ -1,19 +1,100 @@
 import React from 'react';
-import { AppDownloadSection } from './components/AppDownloadSection';
-import { AppShowcase } from './components/AppShowcase';
-import { CommunitySection } from './components/CommunitySection';
-import { ContributorsSection } from './components/ContributorsSection';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { ProductPreview } from './components/ProductPreview';
 import { Ferrofluid } from './components/Ferrofluid';
+import { useInViewOnce } from './hooks/useInViewOnce';
 import { useTheme } from './hooks/useTheme';
 import { I18nProvider, useI18n } from './i18n';
 
+const DeferredAppShowcase = React.lazy(() =>
+  import('./components/AppShowcase').then(({ AppShowcase }) => ({ default: AppShowcase })),
+);
+const DeferredProductPreview = React.lazy(() =>
+  import('./components/ProductPreview').then(({ ProductPreview }) => ({ default: ProductPreview })),
+);
+const DeferredAppDownload = React.lazy(() =>
+  import('./components/AppDownloadSection').then(({ AppDownloadSection }) => ({ default: AppDownloadSection })),
+);
+const DeferredContributors = React.lazy(() =>
+  import('./components/ContributorsSection').then(({ ContributorsSection }) => ({ default: ContributorsSection })),
+);
+const DeferredCommunity = React.lazy(() =>
+  import('./components/CommunitySection').then(({ CommunitySection }) => ({ default: CommunitySection })),
+);
+
+const DeferredSection: React.FC<{
+  id: string;
+  className: string;
+  children: React.ReactNode;
+}> = ({ id, className, children }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const isNearViewport = useInViewOnce(ref, '700px');
+
+  return (
+    <div id={id} ref={ref} className={className}>
+      {isNearViewport && <React.Suspense fallback={null}>{children}</React.Suspense>}
+    </div>
+  );
+};
+
+const AppShowcaseRegion: React.FC = () => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const isInView = useInViewOnce(ref, '0px');
+
+  return (
+    <div id="app" ref={ref} className="scroll-mt-24 min-h-[695px] overflow-hidden lg:min-h-[964px]">
+      {isInView && (
+        <React.Suspense fallback={null}>
+          <DeferredAppShowcase />
+        </React.Suspense>
+      )}
+    </div>
+  );
+};
+
+const ProductPreviewRegion: React.FC = () => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const isNearViewport = useInViewOnce(ref, '300px');
+
+  return (
+    // Reserve the 909px desktop stage plus its 2600px pinned scroll distance.
+    <div id="preview" ref={ref} className="scroll-mt-24 min-h-[777px] lg:min-h-[3509px] motion-reduce:lg:min-h-[909px]">
+      {isNearViewport && (
+        <React.Suspense fallback={null}>
+          <DeferredProductPreview />
+        </React.Suspense>
+      )}
+    </div>
+  );
+};
+
+const SkipLink: React.FC = () => {
+  const { t } = useI18n();
+
+  return (
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
+    >
+      {t('a11y.skip')}
+    </a>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
-  const { t } = useI18n();
+
+  const onClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a[href="#download"]') : null;
+    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    if (window.location.hash !== link.hash) window.history.pushState(null, '', link.hash);
+    // Skip the pinned scrollytelling stage, as the previously eager-loaded trigger did.
+    document.getElementById(link.hash.slice(1))?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  };
 
   React.useEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
@@ -22,23 +103,18 @@ const AppContent: React.FC = () => {
   }, []);
 
   return (
-    <div id="top" className="relative flex min-h-dvh flex-col overflow-x-clip bg-page text-primary">
+    <div id="top" onClickCapture={onClickCapture} className="relative flex min-h-dvh flex-col overflow-x-clip bg-page text-primary">
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
         <div className="mesh-gradient absolute inset-0" />
       </div>
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
-      >
-        {t('a11y.skip')}
-      </a>
+      <SkipLink />
 
       <Header theme={theme} toggleTheme={toggleTheme} />
 
       <main id="main" className="relative z-10 -mt-14 flex-1">
         <Hero />
-        <AppShowcase />
-        <ProductPreview />
+        <AppShowcaseRegion />
+        <ProductPreviewRegion />
 
         {/* Lower Ambient Region: App Download, Community, and Footer enveloped in interactive Ferrofluid */}
         <div className="relative">
@@ -79,9 +155,21 @@ const AppContent: React.FC = () => {
           </div>
 
           <div className="relative z-10">
-            <AppDownloadSection />
-            <ContributorsSection />
-            <CommunitySection />
+            <DeferredSection
+              id="download"
+              className="scroll-mt-24 relative mt-14 min-h-[500px] sm:mt-20 md:mt-28 md:min-h-[506px]"
+            >
+              <DeferredAppDownload />
+            </DeferredSection>
+            <DeferredSection
+              id="contributors"
+              className="scroll-mt-24 relative min-h-[472px] sm:min-h-[510px]"
+            >
+              <DeferredContributors />
+            </DeferredSection>
+            <DeferredSection id="community" className="scroll-mt-24 min-h-[538px] lg:min-h-[292px]">
+              <DeferredCommunity />
+            </DeferredSection>
             <Footer />
           </div>
         </div>

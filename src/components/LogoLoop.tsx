@@ -290,7 +290,7 @@ export const LogoLoop: React.FC<LogoLoopProps> = memo(
     }, [effectiveHoverSpeed]);
 
     const renderLogoItem = useCallback(
-      (item: LogoItem, key: React.Key) => {
+      (item: LogoItem, key: React.Key, isClone: boolean) => {
         if (renderItem) {
           return (
             <li className="logoloop__item" key={key} role="listitem">
@@ -325,6 +325,7 @@ export const LogoLoop: React.FC<LogoLoopProps> = memo(
             className="logoloop__link"
             href={item.href}
             aria-label={itemAriaLabel || 'logo link'}
+            tabIndex={isClone ? -1 : undefined}
             target="_blank"
             rel="noreferrer noopener"
           >
@@ -353,7 +354,7 @@ export const LogoLoop: React.FC<LogoLoopProps> = memo(
             ref={copyIndex === 0 ? seqRef : undefined}
           >
             {logos.map((item, itemIndex) =>
-              renderLogoItem(item, `${copyIndex}-${itemIndex}`)
+              renderLogoItem(item, `${copyIndex}-${itemIndex}`, copyIndex > 0)
             )}
           </ul>
         )),

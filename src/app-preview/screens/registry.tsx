@@ -12,17 +12,19 @@ import {
   WidgetsScreenIcon,
   WikiScreenIcon,
 } from '../../components/icons';
-import { CampusPage } from './Campus';
-import { ChatPage, type Msg } from './Chat';
+import type { Msg } from './Chat';
 import { Composer, QUESTION_BODY, QUESTION_TITLE } from './Composer';
-import { CoursePage } from './Course';
-import { HomeFeed } from './Home';
-import { MessagesPage } from './Messages';
-import { NotificationsPage } from './Notifications';
-import { ProfilePage } from './Profile';
-import { ScheduleWidgetsPage } from './ScheduleWidgetsPage';
-import { TopicPage } from './Topic';
-import { WikiHome } from './Wiki';
+
+const CampusPage = React.lazy(() => import('./Campus').then(({ CampusPage }) => ({ default: CampusPage })));
+const ChatPage = React.lazy(() => import('./Chat').then(({ ChatPage }) => ({ default: ChatPage })));
+const CoursePage = React.lazy(() => import('./Course').then(({ CoursePage }) => ({ default: CoursePage })));
+const HomeFeed = React.lazy(() => import('./Home').then(({ HomeFeed }) => ({ default: HomeFeed })));
+const MessagesPage = React.lazy(() => import('./Messages').then(({ MessagesPage }) => ({ default: MessagesPage })));
+const NotificationsPage = React.lazy(() => import('./Notifications').then(({ NotificationsPage }) => ({ default: NotificationsPage })));
+const ProfilePage = React.lazy(() => import('./Profile').then(({ ProfilePage }) => ({ default: ProfilePage })));
+const ScheduleWidgetsPage = React.lazy(() => import('./ScheduleWidgetsPage').then(({ ScheduleWidgetsPage }) => ({ default: ScheduleWidgetsPage })));
+const TopicPage = React.lazy(() => import('./Topic').then(({ TopicPage }) => ({ default: TopicPage })));
+const WikiHome = React.lazy(() => import('./Wiki').then(({ WikiHome }) => ({ default: WikiHome })));
 
 /*
  * Registry for the app preview.

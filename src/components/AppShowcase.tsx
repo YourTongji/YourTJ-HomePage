@@ -6,6 +6,7 @@ import { AppDevice } from '../app-preview/AppDevice';
 import { APP_SCREENS, APP_SCREEN_COUNT, screenAt } from '../app-preview/screens/registry';
 import { DEVICE_BEZEL, DEVICE_H, DEVICE_RADIUS, DEVICE_W, SW } from '../app-preview/ui/Phone';
 import { useFitScale } from '../app-preview/useFitScale';
+import { useInViewOnce } from '../hooks/useInViewOnce';
 import { prefersReducedMotion, useMediaQuery } from '../hooks/useMediaQuery';
 import { useTheme } from '../hooks/useTheme';
 import { useI18n } from '../i18n';
@@ -361,6 +362,8 @@ export const AppShowcase: React.FC = () => {
   const slots = isMobile ? MOBILE_FAN_SLOTS : isTablet ? TABLET_FAN_SLOTS : FAN_SLOTS;
 
   const stageHostRef = useRef<HTMLDivElement>(null);
+  const compactStageRef = useRef<HTMLDivElement>(null);
+  const screensNearView = useInViewOnce(isCompact ? compactStageRef : stageHostRef, '100px');
   const scale = useFitScale(stageHostRef, stageWidth, stageHeight, {
     max: 1,
     min: 0.35,
@@ -490,7 +493,7 @@ export const AppShowcase: React.FC = () => {
 
       return () => observer.disconnect();
     },
-    { scope: scopeRef, dependencies: [isMobile, isTablet, isCompact] },
+    { scope: scopeRef, dependencies: [isMobile, isTablet, isCompact, screensNearView] },
   );
 
   /*
@@ -661,12 +664,14 @@ export const AppShowcase: React.FC = () => {
                     className="group block h-full w-full origin-bottom cursor-pointer text-left transition-transform duration-300 ease-out hover:scale-[1.02] focus-visible:scale-[1.02] active:scale-[0.98]"
                     style={{ textAlign: 'left' }}
                   >
-                    <AppDevice
-                      entry={entry}
-                      screenWidth={slot.screenWidth}
-                      shadow={0.8}
-                      screenClassName="fan-screen"
-                    />
+                    {screensNearView && (
+                      <AppDevice
+                        entry={entry}
+                        screenWidth={slot.screenWidth}
+                        shadow={0.8}
+                        screenClassName="fan-screen"
+                      />
+                    )}
                     <span
                       aria-hidden="true"
                       className={`pointer-events-none absolute transition-opacity duration-300 ease-out ${
@@ -685,13 +690,15 @@ export const AppShowcase: React.FC = () => {
                   </button>
                 ) : (
                   <div className={`h-full w-full ${isActive && !isCompact ? 'device-float' : ''}`}>
-                    <AppDevice
-                      entry={entry}
-                      screenWidth={slot.screenWidth}
-                      glare={isActive}
-                      shadow={1}
-                      screenClassName="fan-screen"
-                    />
+                    {screensNearView && (
+                      <AppDevice
+                        entry={entry}
+                        screenWidth={slot.screenWidth}
+                        glare={isActive}
+                        shadow={1}
+                        screenClassName="fan-screen"
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -749,10 +756,8 @@ export const AppShowcase: React.FC = () => {
 
       <div
         className="mt-3.5 sm:mt-4 flex items-center gap-1"
-        role="progressbar"
-        aria-valuenow={activeIndex + 1}
-        aria-valuemin={1}
-        aria-valuemax={APP_SCREEN_COUNT}
+        role="group"
+        aria-label={t('app.showcase.screenSelector')}
       >
         {APP_SCREENS.map((screen, idx) => {
           const isActive = idx === activeIndex;
@@ -762,10 +767,15 @@ export const AppShowcase: React.FC = () => {
               type="button"
               onClick={() => goTo(idx)}
               aria-label={t(screen.labelKey)}
-              className={`h-1.5 flex-1 rounded-full transition-all duration-300 cursor-pointer ${
+            className="relative -my-[9px] flex h-6 flex-1 items-center cursor-pointer"
+          >
+            <span
+              aria-hidden="true"
+              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                 isActive ? 'bg-brand shadow-xs' : 'bg-edge/60 hover:bg-edge'
               }`}
             />
+          </button>
           );
         })}
       </div>
@@ -894,6 +904,7 @@ export const AppShowcase: React.FC = () => {
 
           {/* Centered Phone with Touch Swipe */}
           <div
+            ref={compactStageRef}
             className="fan-device relative flex items-center justify-center touch-pan-y"
             onTouchStart={(e) => {
               pointerStartX.current = e.touches[0].clientX;
@@ -929,13 +940,15 @@ export const AppShowcase: React.FC = () => {
               aria-hidden="true"
               className="pointer-events-none absolute left-1/2 -bottom-2 -translate-x-1/2 w-[80%] h-4 rounded-full blur-md opacity-40 bg-black -z-10"
             />
-            <AppDevice
-              entry={activeEntry}
-              screenWidth={mobileScreenWidth}
-              glare={true}
-              shadow={0.85}
-              screenClassName="fan-screen"
-            />
+            {screensNearView && (
+              <AppDevice
+                entry={activeEntry}
+                screenWidth={mobileScreenWidth}
+                glare={true}
+                shadow={0.85}
+                screenClassName="fan-screen"
+              />
+            )}
           </div>
 
           {/* Right Arrow Button */}
@@ -979,11 +992,9 @@ export const AppShowcase: React.FC = () => {
 
           {/* 11 Micro progress dots */}
           <div
-            className="mt-1.5 flex items-center gap-1.5"
-            role="progressbar"
-            aria-valuenow={activeIndex + 1}
-            aria-valuemin={1}
-            aria-valuemax={APP_SCREEN_COUNT}
+            className="mt-1.5 -mx-1 flex h-1.5 items-center justify-between"
+            role="group"
+            aria-label={t('app.showcase.screenSelector')}
           >
             {APP_SCREENS.map((screen, idx) => {
               const isActive = idx === activeIndex;
@@ -994,11 +1005,16 @@ export const AppShowcase: React.FC = () => {
                   type="button"
                   onClick={() => goTo(idx)}
                   aria-label={t(screen.labelKey)}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    isActive ? 'w-5 shadow-xs' : 'w-1.5 bg-edge/70 hover:bg-edge'
-                  }`}
-                  style={isActive ? { backgroundColor: screenTheme.color } : undefined}
-                />
+                  className="relative -my-[9px] grid h-6 w-6 shrink-0 place-items-center cursor-pointer"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`block h-1.5 rounded-full transition-all duration-300 ${
+                      isActive ? 'w-5 shadow-xs' : 'w-1.5 bg-edge/70 hover:bg-edge'
+                    }`}
+                    style={isActive ? { backgroundColor: screenTheme.color } : undefined}
+                  />
+                </button>
               );
             })}
           </div>
@@ -1014,7 +1030,6 @@ export const AppShowcase: React.FC = () => {
   return (
     <section
       ref={scopeRef}
-      id="app"
       aria-labelledby="app-showcase-title"
       className="scroll-mt-24 overflow-hidden"
     >

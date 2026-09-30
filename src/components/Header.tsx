@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import { useMotionValueEvent, useScroll } from 'motion/react';
 import { LOCALES, Locale, useI18n } from '../i18n';
 import { Theme } from '../types';
 import { assetUrl } from '../utils/assets';
@@ -184,27 +184,20 @@ const LanguageMenu: React.FC = () => {
 export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
   const { t } = useI18n();
   const { scrollY } = useScroll();
-  const reduceMotion = useReducedMotion();
-  const lastScrollY = useRef(0);
   const [compact, setCompact] = useState(() => window.scrollY > 96);
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
-    if (reduceMotion) return;
-
-    const delta = latest - lastScrollY.current;
-    lastScrollY.current = latest;
-
-    if (delta > 0 && latest > 96) {
-      setCompact(true);
-    } else if (delta < 0) {
+    if (latest <= 0) {
       setCompact(false);
+    } else if (latest > 96) {
+      setCompact(true);
     }
   });
 
   return (
     <header
-      className={`glass-panel floating-nav sticky top-3 z-40 mx-auto flex h-14 w-[calc(100%-2rem)] max-w-page origin-top items-center justify-between gap-3 pl-3 pr-2 transition-[transform,opacity] duration-300 ease-out sm:w-[calc(100%-3rem)] ${
-        compact ? 'nav-compact' : ''
+      className={`floating-nav sticky top-3 z-40 mx-auto flex h-14 w-[calc(100%-2rem)] max-w-page origin-top items-center justify-between gap-3 pl-3 pr-2 transition-[max-width,transform,opacity] duration-[420ms] ease-in-out sm:w-[calc(100%-3rem)] lg:w-[calc(100%-3rem)] ${
+        compact ? 'glass-panel nav-compact' : 'lg:max-w-[1240px]'
       }`}
     >
       <a

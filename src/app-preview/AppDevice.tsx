@@ -26,7 +26,7 @@ export interface AppDeviceProps {
   overlay?: React.ReactNode;
 }
 
-export const AppDevice: React.FC<AppDeviceProps> = ({
+const AppDeviceView: React.FC<AppDeviceProps> = ({
   entry,
   screenWidth,
   glare = false,
@@ -49,8 +49,10 @@ export const AppDevice: React.FC<AppDeviceProps> = ({
       className={screenClassName}
       style={{ position: 'absolute', inset: 0 }}
     >
-      {entry.render(renderOptions)}
+      <React.Suspense fallback={null}>{entry.render(renderOptions)}</React.Suspense>
     </div>
     {overlay}
   </DeviceFrame>
 );
+
+export const AppDevice = React.memo(AppDeviceView);

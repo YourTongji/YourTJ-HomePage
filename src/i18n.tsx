@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, startTransition, useCallback, useContext, useEffect, useState } from 'react';
 
 export type Locale = 'zh-CN' | 'zh-TW' | 'en' | 'ja' | 'de';
 
@@ -47,6 +47,7 @@ const zhCN: Dictionary = {
   'app.showcase.title': '未竟的学园日常，在掌心继续推演。',
   'app.showcase.desc': '论坛、课评、课表、知识库与私信，下面每一屏都是 App 里真实存在的页面。',
   'app.showcase.tabsLabel': '新建文件夹...',
+  'app.showcase.screenSelector': '选择应用页面',
   'app.showcase.sideAction': '切换到{name}',
   'app.showcase.note': '界面仅供展示，请以应用内实际界面为准，更多功能正在更新中。',
   'screen.home.label': '首页',
@@ -137,6 +138,7 @@ const zhTW: Dictionary = {
   'app.showcase.title': '未竟的學園日常，在掌心繼續推演。',
   'app.showcase.desc': '論壇、課評、課表、知識庫與私訊，下面每一屏都是 App 裡真實存在的頁面。',
   'app.showcase.tabsLabel': '新增資料夾...',
+  'app.showcase.screenSelector': '選擇應用頁面',
   'app.showcase.sideAction': '切換到{name}',
   'app.showcase.note': '介面僅供展示，請以應用程式內實際介面為準，更多功能正在更新中。',
   'screen.home.label': '首頁',
@@ -227,6 +229,7 @@ const en: Dictionary = {
   'app.showcase.title': 'Unfinished campus stories unfold in your palm.',
   'app.showcase.desc': 'Forum, course reviews, timetable, wiki and direct messages: every screen below is a real page from the app.',
   'app.showcase.tabsLabel': 'New folder...',
+  'app.showcase.screenSelector': 'Choose an app screen',
   'app.showcase.sideAction': 'Switch to {name}',
   'app.showcase.note': 'Screens are for display purposes only; please refer to the actual in-app interface. More features are on the way.',
   'screen.home.label': 'Home',
@@ -317,6 +320,7 @@ const ja: Dictionary = {
   'app.showcase.title': '手のひらの上で、キャンパスの日常を紡ぎ続ける。',
   'app.showcase.desc': 'フォーラム、授業評価、時間割、Wiki、DM。下の画面はどれもアプリに実在するページです。',
   'app.showcase.tabsLabel': '新規フォルダ...',
+  'app.showcase.screenSelector': 'アプリ画面を選択',
   'app.showcase.sideAction': '{name}に切り替え',
   'app.showcase.note': '画面はイメージです。実際のアプリ画面をご確認ください。さらなる機能も順次アップデート予定です。',
   'screen.home.label': 'ホーム',
@@ -407,6 +411,7 @@ const de: Dictionary = {
   'app.showcase.title': 'Campus-Geschichten, die in deiner Hand weiterleben.',
   'app.showcase.desc': 'Forum, Kursbewertungen, Stundenplan, Wiki und Direktnachrichten: Jeder Bildschirm unten ist eine echte Seite aus der App.',
   'app.showcase.tabsLabel': 'Neuer Ordner...',
+  'app.showcase.screenSelector': 'App-Ansicht wählen',
   'app.showcase.sideAction': 'Zu {name} wechseln',
   'app.showcase.note': 'Die gezeigten Oberflächen dienen nur zur Veranschaulichung; maßgeblich ist die tatsächliche App. Weitere Funktionen folgen.',
   'screen.home.label': 'Startseite',
@@ -506,6 +511,9 @@ const I18nContext = createContext<I18nValue | null>(null);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocale] = useState<Locale>(detectLocale);
+  const changeLocale = useCallback((nextLocale: Locale) => {
+    startTransition(() => setLocale(nextLocale));
+  }, []);
 
   useEffect(() => {
     const dictionary = DICTIONARIES[locale];
@@ -527,7 +535,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [locale],
   );
 
-  return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
+  return <I18nContext.Provider value={{ locale, setLocale: changeLocale, t }}>{children}</I18nContext.Provider>;
 };
 
 export const useI18n = (): I18nValue => {
