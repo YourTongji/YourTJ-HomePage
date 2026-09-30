@@ -248,7 +248,7 @@ export const ContributorsSection: React.FC = () => {
               {/* Synergy Agent Avatar: clean concentric rounded-xl, no AI badge */}
               <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-edge/80 bg-surface-subtle p-0.5 shadow-xs transition-transform duration-200 group-hover:scale-105">
                 <img
-                  src="https://github.com/synergy-agent.png"
+                  src={import.meta.env.DEV ? 'https://github.com/synergy-agent.png' : `/.netlify/images?url=${encodeURIComponent('https://github.com/synergy-agent.png')}&w=88&h=88&fit=cover&q=85`}
                   alt="Synergy Agent"
                   width={44}
                   height={44}

@@ -11,7 +11,7 @@
   NODE_VERSION = "22"
 
 [images]
-  remote_images = ['https://avatars\.githubusercontent\.com/.*']
+  remote_images = ['https://avatars\.githubusercontent\.com/.*', 'https://github\.com/synergy-agent\.png']
 
 # SPA fallback: paths that do not match a file in dist (a typo, or a future
 # client-side route) render the homepage instead of Netlify's default 404.
