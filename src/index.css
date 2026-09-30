@@ -827,6 +827,68 @@ html.dark {
     text-wrap: balance;
   }
 
+  /*
+   * Device motion for the app previews.
+   *
+   * The float is CSS on purpose: it runs on the compositor, never touches the
+   * main thread, and needs no cleanup, which matters because the hero and the
+   * showcase each hold a full app screen in the DOM. Transform-only, so both
+   * devices stay on their own layer while everything inside them stays put.
+   */
+  .device-float {
+    animation: device-float 8s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes device-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -8px, 0);
+    }
+  }
+
+  /*
+   * Specular sweep across the glass. A near-white band over a white screen is
+   * invisible, so the highlight is defined by the faint slate edge trailing it:
+   * that edge is what reads as a reflection travelling over the panel. Kept at
+   * a few percent so it never competes with the interface underneath.
+   */
+  .device-glare {
+    background: linear-gradient(
+      104deg,
+      transparent 36%,
+      rgb(255 255 255 / 0.4) 46%,
+      rgb(15 23 42 / 0.05) 53%,
+      transparent 64%
+    );
+    transform: translateX(-130%);
+    animation: device-glare-sweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes device-glare-sweep {
+    0% {
+      transform: translateX(-130%);
+    }
+    24%,
+    100% {
+      transform: translateX(130%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .device-float,
+    .device-glare {
+      animation: none;
+    }
+
+    .device-glare {
+      display: none;
+    }
+  }
+
   /* Hero air. Layer 1 is CSS only, canvases sit behind it. */
   .mist-hero {
     background: linear-gradient(180deg, #9cc1e7 0%, rgba(250, 250, 250, 0) 100%);
@@ -1065,3 +1127,428 @@ html.dark {
     mix-blend-mode: normal;
   }
 }
+
+/*
+ * YourTJHub preview palette.
+ *
+ * Values are the product's own tokens, copied from
+ * YourTJ-Hub/apps/gooseforum/resource/src/styles/tokens.css and namespaced under
+ * --hub-* so the preview mocks can render the product's light AND dark themes
+ * without either palette leaking into the marketing site's tokens (which come
+ * from a different design system and use a different primary).
+ *
+ * Same reasoning as the screenshots these previews replace: the point is to show
+ * the product as it actually looks, so the colours are copied rather than
+ * re-tuned for the marketing site.
+ */
+@layer components {
+  .hub-mock {
+    color-scheme: light;
+    --hub-base-100: oklch(100% 0 0);
+    --hub-base-200: oklch(98.5% 0.003 247.858);
+    --hub-base-300: oklch(96.7% 0.003 264.542);
+    --hub-base-content: oklch(12.9% 0.042 264.695);
+    --hub-icon-muted: oklch(55.4% 0.046 257.417);
+    --hub-line: oklch(92.9% 0.013 255.508);
+    --hub-primary: oklch(54.6% 0.215 262.88);
+    --hub-primary-content: oklch(98.4% 0.003 247.858);
+    --hub-accent: oklch(69.6% 0.17 162.48);
+    --hub-info: oklch(62.3% 0.188 259.815);
+    --hub-success: oklch(62.7% 0.194 149.214);
+    --hub-warning: oklch(76.9% 0.188 70.08);
+    --hub-error: oklch(57.7% 0.245 27.325);
+    --hub-course-1: oklch(45% 0.19 268);
+    --hub-course-2: oklch(42% 0.12 200);
+    --hub-course-3: oklch(44% 0.13 155);
+    --hub-course-4: oklch(45% 0.15 50);
+    --hub-course-5: oklch(46% 0.2 20);
+    --hub-course-6: oklch(40% 0.14 280);
+    --hub-course-7: oklch(43% 0.17 230);
+    --hub-course-8: oklch(47% 0.12 330);
+  }
+
+  html.dark .hub-mock {
+    color-scheme: dark;
+    --hub-base-100: oklch(17.5% 0 0);
+    --hub-base-200: oklch(12.8% 0 0);
+    --hub-base-300: oklch(24% 0 0);
+    --hub-base-content: oklch(92.5% 0 0);
+    --hub-icon-muted: oklch(73% 0 0);
+    --hub-line: oklch(31% 0 0);
+    --hub-primary: oklch(68% 0.16 252);
+    --hub-primary-content: oklch(12.8% 0 0);
+    --hub-accent: oklch(72.3% 0.219 149.579);
+    --hub-info: oklch(73% 0.12 240);
+    --hub-success: oklch(76.8% 0.177 163.223);
+    --hub-warning: oklch(82.8% 0.189 84.429);
+    --hub-error: oklch(71.2% 0.194 13.428);
+    --hub-course-1: oklch(72% 0.15 262);
+    --hub-course-2: oklch(72% 0.1 200);
+    --hub-course-3: oklch(70% 0.12 155);
+    --hub-course-4: oklch(74% 0.13 80);
+    --hub-course-5: oklch(70% 0.16 25);
+    --hub-course-6: oklch(70% 0.12 285);
+    --hub-course-7: oklch(72% 0.13 230);
+    --hub-course-8: oklch(70% 0.13 330);
+  }
+
+  /*
+   * YourTJ App palette (the phone previews).
+   *
+   * Copied from the Flutter app's tokens —
+   * apps/mobile/packages/ui_kit/lib/src/theme/tokens.json, which is itself the
+   * mirror of the web product's tokens.css — and namespaced under --app-* for
+   * the same reason as --hub-*: the phone must look like the app, not like the
+   * marketing site's own green system.
+   *
+   * Four hues the app uses for section accents (emerald / brand / violet /
+   * orange) are not tokens; their dark values keep the light hue and lift the
+   * lightness, which is exactly what tokens.json does between its two blocks.
+   */
+  .app-mock {
+    color-scheme: light;
+    --app-base-100: #ffffff;
+    --app-base-200: #f8fafc;
+    --app-base-300: #f3f4f6;
+    --app-base-content: #020618;
+    --app-icon-muted: #62748e;
+    --app-line: #e2e8f0;
+    --app-primary: #2563eb;
+    --app-primary-content: #f8fafc;
+    --app-secondary: #f1f5f9;
+    --app-secondary-content: #0f172b;
+    --app-accent: #00bc7d;
+    --app-accent-content: #03130c;
+    --app-neutral: #0f172b;
+    --app-neutral-content: #f8fafc;
+    --app-info: #3b82f6;
+    --app-info-content: #eff6ff;
+    --app-success: #00a63e;
+    --app-success-content: #f0fdf4;
+    --app-warning: #fe9a00;
+    --app-warning-content: #fffbeb;
+    --app-error: #e7000b;
+    --app-error-content: #fef2f2;
+    --app-emerald: #059669;
+    --app-brand: #036099;
+    --app-violet: #8b5cf6;
+    --app-orange: #f59e0b;
+    --app-status-ink: #000000;
+  }
+
+  html.dark .app-mock {
+    color-scheme: dark;
+    --app-base-100: #101010;
+    --app-base-200: #070707;
+    --app-base-300: #1f1f1f;
+    --app-base-content: #e6e6e6;
+    --app-icon-muted: #a8a8a8;
+    --app-line: #303030;
+    --app-primary: #439bf7;
+    --app-primary-content: #070707;
+    --app-secondary: #1f1f1f;
+    --app-secondary-content: #e6e6e6;
+    --app-accent: #00c950;
+    --app-accent-content: #070707;
+    --app-neutral: #e6e6e6;
+    --app-neutral-content: #070707;
+    --app-info: #58b1eb;
+    --app-info-content: #070707;
+    --app-success: #00d593;
+    --app-success-content: #070707;
+    --app-warning: #ffb900;
+    --app-warning-content: #070707;
+    --app-error: #ff637e;
+    --app-error-content: #070707;
+    --app-emerald: #00d593; /* lifted: same step as the dark success token */
+    --app-brand: #4aa9e0; /* lifted: keeps the deep-blue hue, raises lightness */
+    --app-violet: #a78bfa; /* lifted: violet-400 for a near-black surface */
+    --app-orange: #ffb900; /* lifted: matches the dark warning token */
+    --app-status-ink: #ffffff;
+  }
+
+  /*
+   * The shell's bottom nav when the host wires it up (the hero). The page mock
+   * cannot express hover or press in an inline style, so those two states live
+   * here; the geometry and colours stay in the component with the rest of the
+   * app's.
+   *
+   * The key is a full-height cell now — GfBottomNavigation's InkWell fills the
+   * 56pt bar — so there is no hover plate: pointing at a key is answered by the
+   * preview's own selection ring (MockHover), and the widget draws no plate in
+   * the first place. Only the press is a web affordance on top of Material's
+   * ripple.
+   */
+  .app-mock {
+    box-sizing: border-box;
+    font-family: var(--font-family-base);
+    text-align: left;
+  }
+  .app-mock * {
+    text-align: left;
+  }
+
+  .app-mock .app-nav-key {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: transform 160ms ease-out;
+  }
+
+  .app-mock .app-nav-key:active {
+    transform: scale(0.92);
+  }
+
+  /* The canvas every preview page is drawn on. Fixed size on purpose: the page
+     mocks are laid out the way the real product lays out at a laptop width, and
+     the whole canvas is then scaled to whatever room the section gives it. */
+  .hub-mock {
+    box-sizing: border-box;
+    font-family: var(--font-family-base);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--hub-base-content);
+    background: var(--hub-base-200);
+  }
+  .hub-mock *,
+  .hub-mock *::before,
+  .hub-mock *::after {
+    box-sizing: border-box;
+  }
+
+  /*
+   * The brand lockup and the theme toggle, in both mocks.
+   *
+   * The product ships its wordmark as two images — black lockup for the light
+   * theme, white for the dark one (brand-default.webp / brand-default-dark.webp,
+   * switched by AppShell.vue on the web and by the app's own layout payload) —
+   * so the previews render the same pair and let the site theme pick one,
+   * exactly as the products do. Drawing our own text next to a cropped icon
+   * would have been a redrawn logo pretending to be a port.
+   *
+   * The app's home app bar does the same thing with its mode toggle: it shows
+   * the glyph of the mode you would switch *to*, so light shows the moon and
+   * dark shows the sun. These two rules let one element carry both glyphs and
+   * follow the site theme.
+   */
+  .mock-brand-light {
+    display: block;
+  }
+
+  .mock-brand-dark {
+    display: none;
+  }
+
+  html.dark .mock-brand-light {
+    display: none;
+  }
+
+  html.dark .mock-brand-dark {
+    display: block;
+  }
+
+  .mock-icon-for-light {
+    display: block;
+  }
+
+  .mock-icon-for-dark {
+    display: none;
+  }
+
+  html.dark .mock-icon-for-light {
+    display: none;
+  }
+
+  html.dark .mock-icon-for-dark {
+    display: block;
+  }
+
+
+  /*
+   * The product's timetable card states (ScheduleTimeTable.vue's scoped style).
+   * Inline styles cannot carry :hover, so the two states live here; the colours
+   * themselves stay in the component, which sets --card-bg-hover per course slot.
+   */
+  .hub-mock .hub-course-card {
+    transition-property: transform, box-shadow, background-color, border-color;
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (hover: hover) {
+    .hub-mock .hub-course-card:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 3px 10px -2px rgb(0 0 0 / 0.08),
+        0 1px 3px -1px rgb(0 0 0 / 0.04);
+      background-color: var(--card-bg-hover, var(--card-bg));
+    }
+  }
+
+  .hub-mock .hub-course-card:active {
+    transform: scale(0.985);
+  }
+
+  /*
+   * Hide scrollbars across all browsers while preserving touch / wheel scrolling.
+   */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  @keyframes narrativeFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-narrative-fade {
+    animation: narrativeFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /*
+   * GfBadgeMedallion skeuomorphic relief from ui_kit/lib/src/components/atoms/gf_badge_medallion.dart
+   */
+  .gf-medallion {
+    --med-color: #a21caf;
+    --med-size: 56px;
+    --med-rim-alpha: 16%;
+    --med-rim-white-alpha: 65%;
+    --med-tint-dark-alpha: 24%;
+    --med-border-alpha: 26%;
+    --med-shadow-alpha: 0.08;
+    --med-face-base: var(--app-base-100);
+    --med-face-t1: 15%;
+    --med-face-t2: 6%;
+    --med-face-t3: 8%;
+    --med-face-white-alpha: 40%;
+    --med-inner-border-alpha: 0.70;
+  }
+
+  html.dark .gf-medallion {
+    --med-rim-alpha: 24%;
+    --med-rim-white-alpha: 16%;
+    --med-tint-dark-alpha: 30%;
+    --med-border-alpha: 34%;
+    --med-shadow-alpha: 0.20;
+    --med-face-base: color-mix(in srgb, #f8fafc 90%, var(--app-base-100));
+    --med-face-t1: 10%;
+    --med-face-t2: 4%;
+    --med-face-t3: 6%;
+    --med-face-white-alpha: 12%;
+    --med-inner-border-alpha: 0.36;
+  }
+
+  .gf-medallion-outer {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: var(--med-size);
+    height: var(--med-size);
+    box-sizing: border-box;
+    padding: calc(var(--med-size) * 0.075);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, #ffffff var(--med-rim-white-alpha), color-mix(in srgb, var(--med-color) var(--med-rim-alpha), var(--app-base-100))) 0%,
+      color-mix(in srgb, var(--med-color) var(--med-rim-alpha), var(--app-base-100)) 50%,
+      color-mix(in srgb, var(--med-color) var(--med-tint-dark-alpha), var(--app-base-100)) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--med-color) var(--med-border-alpha), var(--app-line));
+    box-shadow: 0 calc(var(--med-size) * 0.035) calc(var(--med-size) * 0.08) rgba(0, 0, 0, var(--med-shadow-alpha));
+  }
+
+  .gf-medallion-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--med-color) var(--med-face-t1), var(--med-face-base)) 0%,
+      color-mix(in srgb, var(--med-color) var(--med-face-t2), var(--med-face-base)) 50%,
+      color-mix(in srgb, #ffffff var(--med-face-white-alpha), color-mix(in srgb, var(--med-color) var(--med-face-t3), var(--med-face-base))) 100%
+    );
+    border: 0.8px solid rgba(255, 255, 255, var(--med-inner-border-alpha));
+  }
+
+  .gf-medallion-artwork {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--med-size) * 0.60);
+    height: calc(var(--med-size) * 0.60);
+  }
+
+  /*
+   * Android Schedule Widgets (from Android Jetpack Glance and widget_colors.xml)
+   */
+  .android-widget-theme {
+    --w-bg: rgba(255, 253, 248, 0.72);
+    --w-fg: #1C1B1F;
+    --w-muted: #514D56;
+    --w-divider: rgba(104, 99, 107, 0.18);
+    --w-accent: #006C4C;
+    --w-slot-1: #C53D43;
+    --w-slot-2: #D06A2A;
+    --w-slot-3: #A47716;
+    --w-slot-4: #438B4B;
+    --w-slot-5: #267C78;
+    --w-slot-6: #3C70B5;
+    --w-slot-7: #7256B5;
+    --w-slot-8: #A24684;
+    --w-tint-alpha: 0.12;
+    --w-surface-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  html.dark .android-widget-theme {
+    --w-bg: rgba(27, 29, 33, 0.70);
+    --w-fg: #E7E1E5;
+    --w-muted: #CAC4CC;
+    --w-divider: rgba(202, 196, 204, 0.22);
+    --w-accent: #63DBB2;
+    --w-slot-1: #FF8A8E;
+    --w-slot-2: #FFAD72;
+    --w-slot-3: #E4C35E;
+    --w-slot-4: #7DCC86;
+    --w-slot-5: #67C7C1;
+    --w-slot-6: #82ADF0;
+    --w-slot-7: #B69AF2;
+    --w-slot-8: #E68BC5;
+    --w-tint-alpha: 0.18;
+    --w-surface-shadow: 0 10px 30px rgba(0, 0, 0, 0.38), 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .schedule-widget-surface {
+    position: relative;
+    border-radius: 24px;
+    background-color: var(--w-bg);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--w-divider);
+    box-shadow: var(--w-surface-shadow);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+}
+
+

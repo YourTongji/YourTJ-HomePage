@@ -7,4 +7,13 @@ export default defineConfig({
   // absolute paths. Relative paths would break when Netlify's SPA fallback
   // returns index.html for a nested URL such as /foo/bar.
   base: '/',
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 4173,
+  },
 });
+

@@ -17,12 +17,15 @@ export interface CommunityLink {
   href: string;
 }
 
+/**
+ * One surface of the product web preview. The slides are rendered live (see
+ * src/hub-mock) rather than shown as screenshots, so a slide is a title, a real
+ * destination and the id that selects which product page to render.
+ */
 export interface PreviewSlide {
   id: 'hub-home' | 'hub-courses' | 'hub-schedule' | 'hub-wiki';
   titleKey: string;
   href: string;
-  imageLight: string;
-  imageDark: string;
 }
 
 export interface AppLinkConfig {

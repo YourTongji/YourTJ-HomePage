@@ -1,13 +1,11 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
-import { APP_AVAILABLE, PRODUCT_ENTRIES } from '../constants';
 import { LOCALES, Locale, useI18n } from '../i18n';
 import { Theme } from '../types';
 import { assetUrl } from '../utils/assets';
 import {
   ArrowDownRightIcon,
-  ArrowUpRightIcon,
   CheckIcon,
   LanguageIcon,
   MoonIcon,
@@ -21,14 +19,12 @@ interface HeaderProps {
 }
 
 /**
- * The nav carries exactly one primary action, and it only ever points at
- * something a visitor can actually reach. While the app is unreleased that is
- * the live hub; once it ships the same slot becomes the download anchor, so the
- * nav never advertises a destination that dead-ends in a "coming soon" panel.
+ * The nav carries exactly one primary action, and now that the app ships it
+ * points at the download panel: the one place on the page where a visitor can
+ * actually install it. The hub keeps its own entry in the hero's product card,
+ * so the nav never has to choose between two destinations.
  */
-const PRIMARY_NAV_ACTION = APP_AVAILABLE
-  ? { href: '#app', labelKey: 'nav.getApp', isExternal: false }
-  : { href: PRODUCT_ENTRIES[0].href, labelKey: 'nav.hub', isExternal: true };
+const PRIMARY_NAV_ACTION = { href: '#download', labelKey: 'nav.getApp' } as const;
 
 const LanguageMenu: React.FC = () => {
   const { locale, setLocale, t } = useI18n();
@@ -229,18 +225,11 @@ export const Header: React.FC<HeaderProps> = ({ theme, toggleTheme }) => {
         <a
           href={PRIMARY_NAV_ACTION.href}
           aria-label={t(PRIMARY_NAV_ACTION.labelKey)}
-          {...(PRIMARY_NAV_ACTION.isExternal
-            ? { target: '_blank', rel: 'noopener noreferrer' }
-            : {})}
           className="group hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-surface-selected px-4 text-sm font-semibold text-link transition-[background-color,transform] duration-200 hover:bg-brand/20 active:scale-[0.96] sm:inline-flex sm:h-10 sm:px-5 dark:bg-white/5 dark:hover:bg-white/10"
         >
-          {!PRIMARY_NAV_ACTION.isExternal && <PhoneIcon className="h-4 w-4" />}
+          <PhoneIcon className="h-4 w-4" />
           <span aria-hidden="true">{t(PRIMARY_NAV_ACTION.labelKey)}</span>
-          {PRIMARY_NAV_ACTION.isExternal ? (
-            <ArrowUpRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          ) : (
-            <ArrowDownRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
-          )}
+          <ArrowDownRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
         </a>
 
         <LanguageMenu />

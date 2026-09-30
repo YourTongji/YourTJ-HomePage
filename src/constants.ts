@@ -10,59 +10,50 @@ export const PRODUCT_ENTRIES: ProductEntry[] = [
     id: 'hub',
     titleKey: 'product.hub.title',
     descriptionKey: 'product.hub.description',
-    statusLabelKey: 'product.hub.status',
     href: 'https://f.yourtj.de',
     available: true,
   },
 ];
 
-// Slide order mirrors the storytelling flow: land, explore, plan, contribute.
+/**
+ * Slide order mirrors the storytelling flow: land, explore, plan, contribute.
+ * Each id is rendered live by src/hub-mock/registry.tsx — the previews are the
+ * product's own pages, not screenshots of them.
+ */
 export const PREVIEW_SLIDES: PreviewSlide[] = [
   {
     id: 'hub-home',
     titleKey: 'preview.slide.hub.title',
     href: 'https://f.yourtj.de/',
-    imageLight: 'preview-hub-light.webp',
-    imageDark: 'preview-hub-dark.webp',
   },
   {
     id: 'hub-courses',
     titleKey: 'preview.slide.course.title',
     href: 'https://f.yourtj.de/courses',
-    imageLight: 'preview-course-light.webp',
-    imageDark: 'preview-course-dark.webp',
   },
   {
     id: 'hub-schedule',
     titleKey: 'preview.slide.schedule.title',
     href: 'https://f.yourtj.de/schedule',
-    imageLight: 'preview-sim-light.webp',
-    imageDark: 'preview-sim-dark.webp',
   },
   {
     id: 'hub-wiki',
     titleKey: 'preview.slide.wiki.title',
     href: 'https://f.yourtj.de/wiki',
-    imageLight: 'preview-wiki-light.webp',
-    imageDark: 'preview-wiki-dark.webp',
   },
 ];
 
 /**
- * The forum app has not shipped yet. While false, every app entry point renders
- * as a non-interactive masked preview instead of a live download link.
- */
-export const APP_AVAILABLE = false;
-
-/**
- * Reserved destinations for the mobile client. It has not shipped yet, so these
- * point at the Hub repository instead of the retired YourTJCourse repos. Swap in
- * real store / release URLs when the app goes live and APP_AVAILABLE flips.
+ * Destinations for the mobile client. Both platforms point at the project's own
+ * release channel rather than a store listing, because the beta is distributed
+ * directly: iOS through TestFlight, Android through the release APK. Swap in
+ * App Store / Play URLs once the store builds are live.
  */
 export const APP_LINKS: AppLinkConfig = {
-  iosTestflight: 'https://github.com/YourTongji/YourTJ-Hub/releases',
+  iosTestflight: 'https://apps.apple.com/us/app/yourtj/id6809457637?platform=vision',
   iosIssues: 'https://github.com/YourTongji/YourTJ-Hub/issues',
-  androidAcceleratedApk: 'https://github.com/YourTongji/YourTJ-Hub/releases',
+  androidAcceleratedApk:
+    'https://github.com/YourTongji/YourTJ-Hub/releases/download/mobile-latest/YourTJ-arm64-v8a.apk',
   androidReleases: 'https://github.com/YourTongji/YourTJ-Hub/releases',
   androidIssues: 'https://github.com/YourTongji/YourTJ-Hub/issues',
 };

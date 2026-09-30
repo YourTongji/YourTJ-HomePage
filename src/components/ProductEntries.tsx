@@ -45,7 +45,7 @@ const ProductCard: React.FC<{ product: ProductEntry }> = ({ product }) => {
        */}
       <div className="relative mt-auto pt-4">
         <div className="flex flex-col gap-3 border-t border-edge pt-3.5 sm:flex-row sm:items-stretch sm:gap-0">
-          <p className="text-xs font-medium leading-5 text-link sm:max-w-[13rem] sm:shrink-0 sm:pr-5">
+          <p className="text-xs font-medium leading-5 text-link text-pretty sm:max-w-[15rem] sm:shrink-0 sm:pr-5">
             {t('product.hub.merged')}
           </p>
           <ul

@@ -10,6 +10,9 @@
   # Node 22 LTS: Vite 6 requires >= 18 and 22 keeps the build off an EOL line.
   NODE_VERSION = "22"
 
+[images]
+  remote_images = ['https://avatars\.githubusercontent\.com/.*']
+
 # SPA fallback: paths that do not match a file in dist (a typo, or a future
 # client-side route) render the homepage instead of Netlify's default 404.
 # Existing files always win over this rule, but a stale asset URL matches

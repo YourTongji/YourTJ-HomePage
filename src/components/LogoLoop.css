@@ -1,0 +1,154 @@
+.logoloop {
+  position: relative;
+  --logoloop-gap: 32px;
+  --logoloop-logoHeight: 28px;
+}
+
+.logoloop--vertical {
+  height: 100%;
+  display: inline-block;
+}
+
+.logoloop--scale-hover {
+  padding-top: calc(var(--logoloop-logoHeight) * 0.1);
+  padding-bottom: calc(var(--logoloop-logoHeight) * 0.1);
+}
+
+.logoloop__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  user-select: none;
+  position: relative;
+  z-index: 0;
+}
+
+.logoloop--vertical .logoloop__track {
+  flex-direction: column;
+  height: max-content;
+  width: 100%;
+}
+
+.logoloop__list {
+  display: flex;
+  align-items: center;
+}
+
+.logoloop--vertical .logoloop__list {
+  flex-direction: column;
+}
+
+.logoloop__item {
+  flex: 0 0 auto;
+  margin-right: var(--logoloop-gap);
+  line-height: 1;
+}
+
+.logoloop--vertical .logoloop__item {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__item:last-child {
+  margin-right: var(--logoloop-gap);
+}
+
+.logoloop--vertical .logoloop__item:last-child {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__node {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Only apply default logo sizing to direct item images, never custom nodes */
+.logoloop__item > img,
+.logoloop__item > a > img {
+  height: var(--logoloop-logoHeight);
+  width: auto;
+  display: block;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop--scale-hover .logoloop__item {
+  overflow: visible;
+}
+
+.logoloop--scale-hover .logoloop__item:hover > img,
+.logoloop--scale-hover .logoloop__item:hover > a > img,
+.logoloop--scale-hover .logoloop__item:hover .logoloop__node {
+  transform: scale(1.04);
+  transform-origin: center center;
+}
+
+.logoloop--scale-hover .logoloop__node {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop__link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  border-radius: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.logoloop__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/*
+ * Modern CSS mask fade: preserves whatever is behind the loop (WebGL, glass, fluid)
+ * without drawing opaque solid rectangles.
+ */
+.logoloop--fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black clamp(28px, 6vw, 96px),
+    black calc(100% - clamp(28px, 6vw, 96px)),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black clamp(28px, 6vw, 96px),
+    black calc(100% - clamp(28px, 6vw, 96px)),
+    transparent 100%
+  );
+}
+
+.logoloop--vertical.logoloop--fade {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black clamp(28px, 6vh, 96px),
+    black calc(100% - clamp(28px, 6vh, 96px)),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black clamp(28px, 6vh, 96px),
+    black calc(100% - clamp(28px, 6vh, 96px)),
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoloop__track {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .logoloop__item img,
+  .logoloop__node {
+    transition: none !important;
+  }
+}
