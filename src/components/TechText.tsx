@@ -659,8 +659,16 @@ export const TechText: React.FC<TechTextProps> = ({
       ctx.fillText(label, Math.round(frame.x1), Math.round(frame.y1) - 7);
     };
 
+    let lastRenderTime = 0;
+    const FRAME_MS = 1000 / 24; // 24 FPS fixed
+
     const tick = (now: number) => {
       raf = 0;
+      if (now - lastRenderTime < FRAME_MS) {
+        if (visible && alive) raf = requestAnimationFrame(tick);
+        return;
+      }
+      lastRenderTime = now;
       const s = settingsRef.current;
       if (!s) return;
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
@@ -669,14 +677,7 @@ export const TechText: React.FC<TechTextProps> = ({
 
       const speedVal = s.speed ?? 1;
       const sweeping = s.sweep && !reducedMotion && !pointer.inside && dragging < 0;
-      if (sweeping) {
-        // Performance optimization: throttle idle ambient sweep to 10 FPS (100ms)
-        if (now - last < 100) {
-          if (visible && alive) raf = requestAnimationFrame(tick);
-          return;
-        }
-        clock += dt * speedVal;
-      }
+      if (sweeping) clock += dt * speedVal;
       pulse += dt;
       let targetX = pointer.x;
       let targetY = pointer.y;
@@ -790,6 +791,7 @@ export const TechText: React.FC<TechTextProps> = ({
 
     const wake = () => {
       if (raf || !visible || !alive) return;
+      lastRenderTime = 0;
       last = performance.now();
       raf = requestAnimationFrame(tick);
     };

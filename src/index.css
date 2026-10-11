@@ -879,24 +879,45 @@ html.dark {
    * a few percent so it never competes with the interface underneath.
    */
   .device-glare {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    /* Static realistic glass reflection sheen */
     background: linear-gradient(
-      104deg,
-      transparent 36%,
-      rgb(255 255 255 / 0.4) 46%,
-      rgb(15 23 42 / 0.05) 53%,
+      132deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.08) 28%,
+      transparent 52%
+    );
+    overflow: hidden;
+  }
+
+  .device-glare::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      108deg,
+      transparent 32%,
+      rgba(255, 255, 255, 0.35) 45%,
+      rgba(15, 23, 42, 0.06) 52%,
       transparent 64%
     );
-    transform: translateX(-130%);
-    animation: device-glare-sweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    transform: translateX(-150%);
+    animation: device-glare-sweep 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
   }
 
   @keyframes device-glare-sweep {
     0% {
-      transform: translateX(-130%);
+      transform: translateX(-150%);
     }
-    24%,
+    38% {
+      transform: translateX(150%);
+    }
     100% {
-      transform: translateX(130%);
+      transform: translateX(150%);
     }
   }
 

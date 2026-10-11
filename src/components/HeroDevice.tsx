@@ -62,7 +62,6 @@ export const HeroDevice: React.FC = React.memo(() => {
     >
       <div style={{ position: 'relative', width: DEVICE_W * scale, height: DEVICE_H * scale }}>
         <div
-          ref={tiltRef}
           style={{
             position: 'absolute',
             left: 0,
@@ -73,8 +72,12 @@ export const HeroDevice: React.FC = React.memo(() => {
             transformOrigin: '0 0',
           }}
         >
-          <div className="device-float h-full w-full">
-            <AppDevice
+          <div
+            ref={tiltRef}
+            style={{ width: DEVICE_W, height: DEVICE_H, transformStyle: 'preserve-3d' }}
+          >
+            <div className="device-float h-full w-full">
+              <AppDevice
               entry={entry}
               screenWidth={SW}
               glare
@@ -105,6 +108,7 @@ export const HeroDevice: React.FC = React.memo(() => {
                 </>
               }
             />
+            </div>
           </div>
         </div>
       </div>
