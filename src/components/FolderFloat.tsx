@@ -52,6 +52,7 @@ export interface FolderFloatProps {
   bounce?: number;
   ceiling?: number;
   className?: string;
+  fps?: number;
 }
 
 const DEFAULT_ITEMS: FolderItem[] = [
@@ -194,6 +195,7 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
   bounce = 0.3,
   ceiling,
   className = '',
+  fps = 24,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   const [popped, setPopped] = useState(-1);
@@ -220,13 +222,15 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     onOpenChange?: (open: boolean) => void;
     drift: number;
     reduce: boolean;
+    fps: number;
   }>({
     onSelect,
     onOpenChange,
     drift,
     reduce: false,
+    fps,
   });
-  latest.current = { onSelect, onOpenChange, drift, reduce: false };
+  latest.current = { onSelect, onOpenChange, drift, reduce: false, fps };
 
   const popTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -359,7 +363,16 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     const tick = (now: number) => {
       const s = world.current;
       if (!s.engine) return;
-      const dt = s.last ? Math.min(32, now - s.last) : 16;
+
+      const targetFps = latest.current.fps || 24;
+      const interval = 1000 / targetFps;
+
+      if (now - s.last < interval) {
+        s.raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      const dt = s.last ? Math.min(48, now - s.last) : 1000 / targetFps;
       s.last = now;
       const t = (now - s.t0) / 1000;
       const k = latest.current.drift * 0.00005 * Math.min(1, t / 2);
