@@ -2,7 +2,6 @@ import React from 'react';
 import { APP_LINKS } from '../constants';
 import { useI18n } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
-import { useInViewOnce } from '../hooks/useInViewOnce';
 import { assetUrl } from '../utils/assets';
 import {
   AndroidIcon,
@@ -16,9 +15,6 @@ import { SpecularButton } from './SpecularButton';
 
 const DeferredQRCode = React.lazy(() =>
   import('qrcode.react').then(({ QRCodeSVG }) => ({ default: QRCodeSVG })),
-);
-const DeferredShapeBlur = React.lazy(() =>
-  import('./ShapeBlur').then(({ ShapeBlur }) => ({ default: ShapeBlur })),
 );
 
 interface PlatformActionProps {
@@ -209,7 +205,6 @@ export const AppDownloadSection: React.FC = () => {
   const { t } = useI18n();
   const { theme } = useTheme();
   const sectionRef = React.useRef<HTMLElement>(null);
-  const shapeBlurNear = useInViewOnce(sectionRef, '250px');
   const [savedAndroidRoute] = React.useState(cachedAndroidRoute);
   const [androidDownloadUrl, setAndroidDownloadUrl] = React.useState(() =>
     routeUrl(savedAndroidRoute ?? ANDROID_ROUTES[0], APP_LINKS.androidAcceleratedApk),
@@ -349,23 +344,14 @@ export const AppDownloadSection: React.FC = () => {
               <div className="relative flex flex-col items-center justify-center gap-4">
                 {/* Logo Container with React Bits ShapeBlur */}
                 <div className="relative group flex items-center justify-center w-48 h-48 sm:w-56 sm:h-56">
-                  {/* React Bits ShapeBlur WebGL background */}
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-3xl">
-                    {shapeBlurNear && (
-                      <React.Suspense fallback={null}>
-                        <DeferredShapeBlur
-                          variation={0}
-                          pixelRatioProp={typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 2}
-                          shapeSize={1.4}
-                          roundness={0.45}
-                          borderSize={0.065}
-                          circleSize={0.4}
-                          circleEdge={0.7}
-                          color={theme === 'dark' ? '#38bdf8' : '#036099'}
-                        />
-                      </React.Suspense>
-                    )}
-                  </div>
+                  {/* Clean CSS ambient aura */}
+                  <div
+                    className={`absolute inset-4 rounded-3xl blur-2xl pointer-events-none transition-all duration-500 group-hover:scale-110 ${
+                      theme === 'dark'
+                        ? 'bg-sky-500/25 shadow-[0_0_50px_rgba(56,189,248,0.3)]'
+                        : 'bg-sky-400/25 shadow-[0_0_50px_rgba(3,96,153,0.2)]'
+                    }`}
+                  />
 
                   {/* Solid white backing for contrast and optical depth so SVG logo doesn't sit directly on dark */}
                   <div className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white dark:bg-white border border-black/5 dark:border-white/10 shadow-xl pointer-events-none transition-transform duration-300 group-hover:scale-105" />

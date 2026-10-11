@@ -2,7 +2,6 @@ import React from 'react';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { Ferrofluid } from './components/Ferrofluid';
 import { useInViewOnce } from './hooks/useInViewOnce';
 import { useTheme } from './hooks/useTheme';
 import { I18nProvider, useI18n } from './i18n';
@@ -148,41 +147,19 @@ const AppContent: React.FC = () => {
         <AppShowcaseRegion />
         <ProductPreviewRegion />
 
-        {/* Lower Ambient Region: App Download, Community, and Footer enveloped in interactive Ferrofluid */}
+        {/* Lower Ambient Region: App Download, Community, and Footer */}
         <div className="relative">
-          {/* Continuous Ferrofluid Ambient Background with soft feathered top mask */}
+          {/* Subtle static ambient glow for lower region */}
           <div
             className="pointer-events-none absolute inset-0 -top-28 overflow-hidden z-0"
-            style={{
-              maskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
-              WebkitMaskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
-            }}
             aria-hidden="true"
           >
-            <Ferrofluid
-              colors={
+            <div
+              className={`absolute top-1/4 left-1/2 -translate-x-1/2 h-[500px] w-[800px] max-w-full rounded-full blur-[140px] pointer-events-none transition-colors duration-500 ${
                 theme === 'dark'
-                  ? ['#00bc7d', '#72f0a6', '#38bdf8', '#10b981', '#06b6d4']
-                  : ['#036099', '#0284c7', '#059669', '#0d9488', '#10b981']
-              }
-              speed={0.35}
-              scale={1.5}
-              turbulence={0.9}
-              fluidity={0.14}
-              rimWidth={0.22}
-              sharpness={2.6}
-              shimmer={1.2}
-              glow={theme === 'dark' ? 1.7 : 1.3}
-              flowDirection="down"
-              opacity={theme === 'dark' ? 0.48 : 0.3}
-              mouseInteraction={true}
-              mouseStrength={1.15}
-              mouseRadius={0.32}
-              mouseDampening={0.14}
-              mixBlendMode={theme === 'dark' ? 'screen' : 'multiply'}
-              className="w-full h-full"
+                  ? 'bg-emerald-500/10'
+                  : 'bg-sky-400/10'
+              }`}
             />
           </div>
 
