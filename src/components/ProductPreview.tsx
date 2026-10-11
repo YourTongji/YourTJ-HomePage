@@ -874,16 +874,6 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
         transformStyle: 'preserve-3d',
       }}
     >
-      {/* Ambient specular highlight tracking fine pointer */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-20 transition-opacity duration-300"
-        style={{
-          opacity: 'var(--sheen-opacity, 0)',
-          background:
-            'radial-gradient(650px circle at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255,255,255,0.12), transparent 60%)',
-        }}
-      />
       <div
         ref={hostRef}
         className="relative h-full w-full select-none overflow-hidden"
@@ -1065,39 +1055,8 @@ export const ProductPreview: React.FC = () => {
       // Chapter 3 plateau: holds comfortably from 3.8 to 4.8 before unpinning
       tl.to({}, { duration: 1.0 }, 3.8);
 
-      // Pointer tilt & specular light response for fine pointers on desktop
-      const finePointer = window.matchMedia('(pointer: fine)').matches;
+      // Pointer tilt and specular light response removed to keep clean appearance without hover filters
       let cleanupPointer: (() => void) | undefined;
-      if (finePointer && windowFrameRef.current) {
-        const frame = windowFrameRef.current;
-        const quickRotY = gsap.quickTo(frame, 'rotationY', { duration: 0.7, ease: 'power3.out' });
-        const quickRotX = gsap.quickTo(frame, 'rotationX', { duration: 0.7, ease: 'power3.out' });
-
-        const onMouseMove = (e: MouseEvent) => {
-          const rect = frame.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width - 0.5;
-          const y = (e.clientY - rect.top) / rect.height - 0.5;
-          quickRotY(x * 5);
-          quickRotX(-y * 4);
-
-          frame.style.setProperty('--sheen-x', `${((x + 0.5) * 100).toFixed(1)}%`);
-          frame.style.setProperty('--sheen-y', `${((y + 0.5) * 100).toFixed(1)}%`);
-          frame.style.setProperty('--sheen-opacity', '1');
-        };
-
-        const onMouseLeave = () => {
-          quickRotY(0);
-          quickRotX(0);
-          frame.style.setProperty('--sheen-opacity', '0');
-        };
-
-        frame.addEventListener('mousemove', onMouseMove);
-        frame.addEventListener('mouseleave', onMouseLeave);
-        cleanupPointer = () => {
-          frame.removeEventListener('mousemove', onMouseMove);
-          frame.removeEventListener('mouseleave', onMouseLeave);
-        };
-      }
 
       const refresh = () => ScrollTrigger.refresh();
       document.fonts?.ready.then(refresh).catch(() => undefined);
