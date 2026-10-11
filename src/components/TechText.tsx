@@ -1,5 +1,15 @@
 import React, { useEffect, useRef } from 'react';
+import { loadMistWasm, type MistWasmInstance } from '../wasm/mistFluidWasm';
 import './TechText.css';
+
+let wasmInstance: MistWasmInstance | null = null;
+if (typeof window !== 'undefined') {
+  loadMistWasm()
+    .then((w) => {
+      wasmInstance = w;
+    })
+    .catch(() => undefined);
+}
 
 const LABEL_FONT = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 const FALLOFF_STEPS = 8;
@@ -418,6 +428,18 @@ export const TechText: React.FC<TechTextProps> = ({
         });
       });
 
+      if (wasmInstance && glyphs.length > 0) {
+        const count = Math.min(glyphs.length, 128);
+        const boxesPtr = wasmInstance.get_glyph_boxes_ptr();
+        const boxesView = new Float32Array(wasmInstance.memory.buffer, boxesPtr, count * 4);
+        for (let i = 0; i < count; i++) {
+          boxesView[i * 4] = glyphs[i].box.x1;
+          boxesView[i * 4 + 1] = glyphs[i].box.y1;
+          boxesView[i * 4 + 2] = glyphs[i].box.x2;
+          boxesView[i * 4 + 3] = glyphs[i].box.y2;
+        }
+      }
+
       const next: WordMetrics = {
         size,
         baseline: lineMetrics[0]?.ascent ?? 0,
@@ -434,6 +456,18 @@ export const TechText: React.FC<TechTextProps> = ({
     };
 
     const glyphAt = (x: number, y: number): number => {
+      if (wasmInstance && glyphs.length > 0) {
+        const count = Math.min(glyphs.length, 128);
+        const offPtr = wasmInstance.get_glyph_offsets_ptr();
+        const offView = new Float32Array(wasmInstance.memory.buffer, offPtr, count * 2);
+        for (let i = 0; i < count; i++) {
+          offView[i * 2] = glyphs[i].offset.x;
+          offView[i * 2 + 1] = glyphs[i].offset.y;
+        }
+        const hit = wasmInstance.find_glyph_at(x, y, count);
+        if (hit >= 0) return hit;
+      }
+
       const PAD_X = 6;
       const PAD_Y = 6;
       for (let i = 0; i < glyphs.length; i++) {
@@ -822,29 +856,59 @@ export const TechText: React.FC<TechTextProps> = ({
       presence = approach(presence, s.reveal === 'area' && active && dragging < 0 ? 1 : 0, dt, 0.2);
 
       let moving = false;
-      glyphs.forEach((glyph, i) => {
-        if (i === dragging) {
-          glyph.offset.x = approach(glyph.offset.x, pointer.x - grab.x, dt, 0.04);
-          glyph.offset.y = approach(glyph.offset.y, pointer.y - grab.y, dt, 0.04);
-          glyph.velocity.x = 0;
-          glyph.velocity.y = 0;
+      if (wasmInstance && glyphs.length > 0) {
+        const count = Math.min(glyphs.length, 128);
+        const offPtr = wasmInstance.get_glyph_offsets_ptr();
+        const velPtr = wasmInstance.get_glyph_velocities_ptr();
+        const offView = new Float32Array(wasmInstance.memory.buffer, offPtr, count * 2);
+        const velView = new Float32Array(wasmInstance.memory.buffer, velPtr, count * 2);
+        for (let i = 0; i < count; i++) {
+          offView[i * 2] = glyphs[i].offset.x;
+          offView[i * 2 + 1] = glyphs[i].offset.y;
+          velView[i * 2] = glyphs[i].velocity.x;
+          velView[i * 2 + 1] = glyphs[i].velocity.y;
+        }
+        const anyMoving = wasmInstance.update_glyph_springs(
+          count,
+          dragging,
+          pointer.x - grab.x,
+          pointer.y - grab.y,
+          dt,
+          SPRING,
+          DAMPING
+        );
+        for (let i = 0; i < count; i++) {
+          glyphs[i].offset.x = offView[i * 2];
+          glyphs[i].offset.y = offView[i * 2 + 1];
+          glyphs[i].velocity.x = velView[i * 2];
+          glyphs[i].velocity.y = velView[i * 2 + 1];
+        }
+        if (anyMoving) moving = true;
+      } else {
+        glyphs.forEach((glyph, i) => {
+          if (i === dragging) {
+            glyph.offset.x = approach(glyph.offset.x, pointer.x - grab.x, dt, 0.04);
+            glyph.offset.y = approach(glyph.offset.y, pointer.y - grab.y, dt, 0.04);
+            glyph.velocity.x = 0;
+            glyph.velocity.y = 0;
+            moving = true;
+            return;
+          }
+          const { offset, velocity } = glyph;
+          if (Math.abs(offset.x) < 0.05 && Math.abs(offset.y) < 0.05 && Math.hypot(velocity.x, velocity.y) < 0.5) {
+            offset.x = 0;
+            offset.y = 0;
+            velocity.x = 0;
+            velocity.y = 0;
+            return;
+          }
+          velocity.x += (-SPRING * offset.x - DAMPING * velocity.x) * dt;
+          velocity.y += (-SPRING * offset.y - DAMPING * velocity.y) * dt;
+          offset.x += velocity.x * dt;
+          offset.y += velocity.y * dt;
           moving = true;
-          return;
-        }
-        const { offset, velocity } = glyph;
-        if (Math.abs(offset.x) < 0.05 && Math.abs(offset.y) < 0.05 && Math.hypot(velocity.x, velocity.y) < 0.5) {
-          offset.x = 0;
-          offset.y = 0;
-          velocity.x = 0;
-          velocity.y = 0;
-          return;
-        }
-        velocity.x += (-SPRING * offset.x - DAMPING * velocity.x) * dt;
-        velocity.y += (-SPRING * offset.y - DAMPING * velocity.y) * dt;
-        offset.x += velocity.x * dt;
-        offset.y += velocity.y * dt;
-        moving = true;
-      });
+        });
+      }
 
       const focus = dragging >= 0 ? dragging : active ? glyphAt(lens.x, lens.y) : -1;
       if (focus >= 0 && s.selection) {
@@ -939,9 +1003,31 @@ export const TechText: React.FC<TechTextProps> = ({
             Math.max(0, unionClearBox.maxX - unionClearBox.minX),
             Math.max(0, unionClearBox.maxY - unionClearBox.minY)
           );
+          let hits: Uint8Array | null = null;
+          if (wasmInstance && glyphs.length > 0) {
+            const count = Math.min(glyphs.length, 128);
+            const offPtr = wasmInstance.get_glyph_offsets_ptr();
+            const offView = new Float32Array(wasmInstance.memory.buffer, offPtr, count * 2);
+            for (let i = 0; i < count; i++) {
+              offView[i * 2] = glyphs[i].offset.x;
+              offView[i * 2 + 1] = glyphs[i].offset.y;
+            }
+            wasmInstance.check_dirty_intersections(
+              count,
+              unionClearBox.lx,
+              unionClearBox.rx,
+              unionClearBox.ty,
+              unionClearBox.by
+            );
+            const hitsPtr = wasmInstance.get_glyph_hits_ptr();
+            hits = new Uint8Array(wasmInstance.memory.buffer, hitsPtr, count);
+          }
           for (let i = 0; i < glyphs.length; i++) {
             const glyph = glyphs[i];
-            if (!intersectsBounds(glyph, unionClearBox.lx, unionClearBox.rx, unionClearBox.ty, unionClearBox.by)) {
+            const isHit = hits && i < hits.length
+              ? hits[i] === 1
+              : intersectsBounds(glyph, unionClearBox.lx, unionClearBox.rx, unionClearBox.ty, unionClearBox.by);
+            if (!isHit) {
               continue;
             }
             const moved = Math.hypot(glyph.offset.x, glyph.offset.y);

@@ -11,6 +11,36 @@ export interface MistWasmInstance {
   update_particles: (mouseX: number, mouseY: number, canvasW: number, canvasH: number) => void;
   get_particles_ptr: () => number;
   get_particle_count: () => number;
+  // Hot-code acceleration exports
+  get_glyph_boxes_ptr: () => number;
+  get_glyph_offsets_ptr: () => number;
+  get_glyph_velocities_ptr: () => number;
+  get_glyph_hits_ptr: () => number;
+  update_glyph_springs: (
+    count: number,
+    draggingIdx: number,
+    targetDragX: number,
+    targetDragY: number,
+    dt: number,
+    springK: number,
+    dampingC: number
+  ) => number;
+  find_glyph_at: (px: number, py: number, count: number) => number;
+  check_dirty_intersections: (
+    count: number,
+    lx: number,
+    rx: number,
+    ty: number,
+    by: number
+  ) => number;
+  calculate_fit_scale: (
+    width: number,
+    height: number,
+    designW: number,
+    designH: number,
+    minScale: number,
+    maxScale: number
+  ) => number;
   memory: WebAssembly.Memory;
 }
 

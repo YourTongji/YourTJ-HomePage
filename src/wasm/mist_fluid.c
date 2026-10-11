@@ -412,3 +412,176 @@ __attribute__((export_name("get_particle_count")))
 int get_particle_count(void) {
     return particle_count;
 }
+
+// -------------------------------------------------------------
+// HOT CODE OPTIMIZATIONS FOR SCROLLING, ZOOMING & RERENDERING
+// -------------------------------------------------------------
+
+#define MAX_GLYPHS 128
+static float glyph_boxes[MAX_GLYPHS * 4];      // [x1, y1, x2, y2]
+static float glyph_offsets[MAX_GLYPHS * 2];    // [ox, oy]
+static float glyph_velocities[MAX_GLYPHS * 2]; // [vx, vy]
+static unsigned char glyph_hits[MAX_GLYPHS];
+
+__attribute__((export_name("get_glyph_boxes_ptr")))
+float* get_glyph_boxes_ptr(void) { return glyph_boxes; }
+
+__attribute__((export_name("get_glyph_offsets_ptr")))
+float* get_glyph_offsets_ptr(void) { return glyph_offsets; }
+
+__attribute__((export_name("get_glyph_velocities_ptr")))
+float* get_glyph_velocities_ptr(void) { return glyph_velocities; }
+
+__attribute__((export_name("get_glyph_hits_ptr")))
+unsigned char* get_glyph_hits_ptr(void) { return glyph_hits; }
+
+// 1. Vectorized Glyph Spring Dynamics
+__attribute__((export_name("update_glyph_springs")))
+int update_glyph_springs(
+    int count,
+    int dragging_idx,
+    float target_drag_x,
+    float target_drag_y,
+    float dt,
+    float spring_k,
+    float damping_c
+) {
+    int any_moving = 0;
+    if (count > MAX_GLYPHS) count = MAX_GLYPHS;
+
+    for (int i = 0; i < count; i++) {
+        int idx = i * 2;
+        if (i == dragging_idx) {
+            glyph_offsets[idx]     += (target_drag_x - glyph_offsets[idx]) * 0.45f;
+            glyph_offsets[idx + 1] += (target_drag_y - glyph_offsets[idx + 1]) * 0.45f;
+            glyph_velocities[idx]     = 0.0f;
+            glyph_velocities[idx + 1] = 0.0f;
+            any_moving = 1;
+            continue;
+        }
+
+        float ox = glyph_offsets[idx];
+        float oy = glyph_offsets[idx + 1];
+        float vx = glyph_velocities[idx];
+        float vy = glyph_velocities[idx + 1];
+
+        if (fast_abs(ox) < 0.05f && fast_abs(oy) < 0.05f && (vx * vx + vy * vy) < 0.25f) {
+            glyph_offsets[idx]        = 0.0f;
+            glyph_offsets[idx + 1]    = 0.0f;
+            glyph_velocities[idx]     = 0.0f;
+            glyph_velocities[idx + 1] = 0.0f;
+            continue;
+        }
+
+        vx += (-spring_k * ox - damping_c * vx) * dt;
+        vy += (-spring_k * oy - damping_c * vy) * dt;
+        ox += vx * dt;
+        oy += vy * dt;
+
+        glyph_velocities[idx]     = vx;
+        glyph_velocities[idx + 1] = vy;
+        glyph_offsets[idx]        = ox;
+        glyph_offsets[idx + 1]    = oy;
+        any_moving = 1;
+    }
+    return any_moving;
+}
+
+// 2. Vectorized Glyph Hit Testing & Spatial Search
+__attribute__((export_name("find_glyph_at")))
+int find_glyph_at(
+    float px,
+    float py,
+    int count
+) {
+    if (count > MAX_GLYPHS) count = MAX_GLYPHS;
+    const float PAD = 6.0f;
+
+    for (int i = 0; i < count; i++) {
+        int b = i * 4;
+        int o = i * 2;
+        float x1 = glyph_boxes[b]     + glyph_offsets[o]     - PAD;
+        float y1 = glyph_boxes[b + 1] + glyph_offsets[o + 1] - PAD;
+        float x2 = glyph_boxes[b + 2] + glyph_offsets[o]     + PAD;
+        float y2 = glyph_boxes[b + 3] + glyph_offsets[o + 1] + PAD;
+
+        if (px >= x1 && px <= x2 && py >= y1 && py <= y2) {
+            return i;
+        }
+    }
+
+    int best = -1;
+    float best_dist = 1e9f;
+    for (int i = 0; i < count; i++) {
+        int b = i * 4;
+        int o = i * 2;
+        float x1 = glyph_boxes[b]     + glyph_offsets[o]     - PAD;
+        float y1 = glyph_boxes[b + 1] + glyph_offsets[o + 1] - PAD;
+        float x2 = glyph_boxes[b + 2] + glyph_offsets[o]     + PAD;
+        float y2 = glyph_boxes[b + 3] + glyph_offsets[o + 1] + PAD;
+
+        if (py < y1 - 8.0f || py > y2 + 8.0f) continue;
+        float dx = px < x1 ? (x1 - px) : (px > x2 ? (px - x2) : 0.0f);
+        float dy = py < y1 ? (y1 - py) : (py > y2 ? (py - y2) : 0.0f);
+        float d2 = dx * dx + dy * dy;
+        if (d2 < best_dist) {
+            best_dist = d2;
+            best = i;
+        }
+    }
+    return (best_dist < 64.0f) ? best : -1;
+}
+
+// 3. Fast Bounding Box Intersections for Canvas Dirty Rects
+__attribute__((export_name("check_dirty_intersections")))
+int check_dirty_intersections(
+    int count,
+    float lx,
+    float rx,
+    float ty,
+    float by
+) {
+    if (count > MAX_GLYPHS) count = MAX_GLYPHS;
+    const float pad = 10.0f;
+    int hit_count = 0;
+
+    for (int i = 0; i < count; i++) {
+        int b = i * 4;
+        int o = i * 2;
+        float off_x = glyph_offsets[o];
+        float off_y = glyph_offsets[o + 1];
+        float gx1 = glyph_boxes[b]     + (off_x < 0.0f ? off_x : 0.0f) - pad;
+        float gx2 = glyph_boxes[b + 2] + (off_x > 0.0f ? off_x : 0.0f) + pad;
+        float gy1 = glyph_boxes[b + 1] + (off_y < 0.0f ? off_y : 0.0f) - pad;
+        float gy2 = glyph_boxes[b + 3] + (off_y > 0.0f ? off_y : 0.0f) + pad;
+
+        if (!(gx2 < lx || gx1 > rx || gy2 < ty || gy1 > by)) {
+            glyph_hits[i] = 1;
+            hit_count++;
+        } else {
+            glyph_hits[i] = 0;
+        }
+    }
+    return hit_count;
+}
+
+// 4. Uniform Fit Scale Calculation for Zooming and Window Resizing
+__attribute__((export_name("calculate_fit_scale")))
+float calculate_fit_scale(
+    float width,
+    float height,
+    float design_w,
+    float design_h,
+    float min_scale,
+    float max_scale
+) {
+    if (width <= 0.0f || height <= 0.0f || design_w <= 0.0f || design_h <= 0.0f) {
+        return min_scale;
+    }
+    float scale_w = width / design_w;
+    float scale_h = height / design_h;
+    float next = scale_w < scale_h ? scale_w : scale_h;
+    if (next < min_scale) return min_scale;
+    if (next > max_scale) return max_scale;
+    return next;
+}

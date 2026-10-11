@@ -22,6 +22,9 @@ const DeferredContributors = React.lazy(() =>
 const DeferredCommunity = React.lazy(() =>
   import('./components/CommunitySection').then(({ CommunitySection }) => ({ default: CommunitySection })),
 );
+const DeferredFerrofluid = React.lazy(() =>
+  import('./components/Ferrofluid').then(({ Ferrofluid }) => ({ default: Ferrofluid })),
+);
 
 const DeferredSection: React.FC<{
   id: string;
@@ -147,20 +150,44 @@ const AppContent: React.FC = () => {
         <AppShowcaseRegion />
         <ProductPreviewRegion />
 
-        {/* Lower Ambient Region: App Download, Community, and Footer */}
+        {/* Lower Ambient Region: App Download, Community, and Footer enveloped in optimized interactive liquid Ferrofluid */}
         <div className="relative">
-          {/* Subtle static ambient glow for lower region */}
+          {/* Continuous liquid ambient background with soft feathered top mask */}
           <div
             className="pointer-events-none absolute inset-0 -top-28 overflow-hidden z-0"
+            style={{
+              maskImage:
+                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
+            }}
             aria-hidden="true"
           >
-            <div
-              className={`absolute top-1/4 left-1/2 -translate-x-1/2 h-[500px] w-[800px] max-w-full rounded-full blur-[140px] pointer-events-none transition-colors duration-500 ${
-                theme === 'dark'
-                  ? 'bg-emerald-500/10'
-                  : 'bg-sky-400/10'
-              }`}
-            />
+            <React.Suspense fallback={null}>
+              <DeferredFerrofluid
+                colors={
+                  theme === 'dark'
+                    ? ['#00bc7d', '#72f0a6', '#38bdf8', '#10b981', '#06b6d4']
+                    : ['#036099', '#0284c7', '#059669', '#0d9488', '#10b981']
+                }
+                speed={0.28}
+                scale={1.5}
+                turbulence={0.8}
+                fluidity={0.15}
+                rimWidth={0.22}
+                sharpness={2.4}
+                shimmer={1.0}
+                glow={theme === 'dark' ? 1.6 : 1.2}
+                flowDirection="down"
+                opacity={theme === 'dark' ? 0.45 : 0.28}
+                mouseInteraction={true}
+                mouseStrength={1.1}
+                mouseRadius={0.32}
+                mouseDampening={0.14}
+                mixBlendMode={theme === 'dark' ? 'screen' : 'multiply'}
+                className="w-full h-full"
+              />
+            </React.Suspense>
           </div>
 
           <div className="relative z-10">

@@ -58,7 +58,7 @@ void main() {
 `;
 
 const fragment = `
-precision highp float;
+precision mediump float;
 
 uniform vec3  iResolution;
 uniform vec2  iMouse;
@@ -107,10 +107,26 @@ vec3 palette(float h) {
   return uColor7;
 }
 
-float hash(vec3 p3) {
-  p3 = fract(p3 * 0.1031);
-  p3 += dot(p3, p3.zyx + 33.33);
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
+}
+
+float sinlerp(float a, float b, float w) {
+  return mix(a, b, (sin(w * PI - PI / 2.0) + 1.0) / 2.0);
+}
+
+float vn(vec2 p, float s) {
+  vec2 cellp = floor(p / s);
+  vec2 relp = mod(p, s);
+  float g1 = hash(cellp);
+  float g2 = hash(cellp + vec2(1.0, 0.0));
+  float g3 = hash(cellp + vec2(1.0, 1.0));
+  float g4 = hash(cellp + vec2(0.0, 1.0));
+  float bx = sinlerp(g1, g2, relp.x / s);
+  float tx = sinlerp(g4, g3, relp.x / s);
+  return sinlerp(bx, tx, relp.y / s);
 }
 
 float smin(float a, float b, float k) {
@@ -118,49 +134,22 @@ float smin(float a, float b, float k) {
   return -k * log2(r);
 }
 
-float sinlerp(float a, float b, float w) {
-  return mix(a, b, (sin(w * PI - PI / 2.0) + 1.0) / 2.0);
-}
-
-float vn(vec2 p, float s, float seed) {
-  vec2 cellp = floor(p / s);
-  vec2 relp = mod(p, s);
-  float g1 = hash(vec3(cellp, seed));
-  float g2 = hash(vec3(cellp.x + 1.0, cellp.y, seed));
-  float g3 = hash(vec3(cellp.x + 1.0, cellp.y + 1.0, seed));
-  float g4 = hash(vec3(cellp.x, cellp.y + 1.0, seed));
-  float bx = sinlerp(g1, g2, relp.x / s);
-  float tx = sinlerp(g4, g3, relp.x / s);
-  return sinlerp(bx, tx, relp.y / s);
-}
-
-float dbn(vec2 p, float s, float seed) {
-  float o = s / 2.0;
-  float n0 = vn(p, s, seed);
-  float n1 = vn(p + vec2(o, o), s, seed + 0.1);
-  float n2 = vn(p + vec2(-o, o), s, seed + 0.2);
-  float n3 = vn(p + vec2(o, -o), s, seed + 0.3);
-  float n4 = vn(p + vec2(-o, -o), s, seed + 0.4);
-  return (2.0 * n0 + 1.5 * n1 + 1.25 * n2 + 1.125 * n3 + n4) / 7.0;
-}
-
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-  float ref = 700.0 / max(uScale, 0.05);
+  float ref = 650.0 / max(uScale, 0.05);
   vec2 p = fragCoord / iResolution.y * ref;
 
-  float spd = 200.0 * uSpeed;
+  float spd = 120.0 * uSpeed;
   float t = iTime;
 
   vec2 dir = uFlow;
   vec2 perp = vec2(-dir.y, dir.x);
 
-  float distort1 = vn(p + perp * (t * spd), 60.0, 10.0) * 50.0 * uTurbulence;
-  float distort2 = vn(p - perp * (t * spd), 120.0, 15.0) * 100.0 * uTurbulence;
+  // High-performance 2-layer liquid flow distortion field
+  float distort = vn(p + perp * (t * spd), 80.0) * 38.0 * uTurbulence;
+  float n1 = vn(p + distort + dir * (t * spd * 0.45), 48.0);
+  float n2 = vn(p - distort - dir * (t * spd * 0.45), 64.0);
 
-  float peaks = dbn(p + distort1 + dir * (t * spd * 0.5), 40.0, 1.0);
-  float peaks2 = dbn(p + distort2 - dir * (t * spd * 0.5), 40.0, 0.0);
-
-  float mapeaks = smin(peaks, peaks2, max(uFluidity, 0.001));
+  float liquid = smin(n1, n2, max(uFluidity, 0.015));
 
   float mGlow = 0.0;
   if (uMouseEnabled > 0.5) {
@@ -170,12 +159,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     mGlow = exp(-md * md / (rr * rr)) * uMouseStrength;
   }
 
-  float band = (uRimWidth - abs((mapeaks - 0.4) * 2.0)) * 5.0;
-  float ltn = clamp(band - vn(p + dir * (t * spd * 0.5), 60.0, 12.0) * uShimmer, 0.0, 1.0);
+  float band = (uRimWidth - abs((liquid - 0.42) * 2.0)) * 5.0;
+  float ltn = clamp(band, 0.0, 1.0);
   ltn = pow(ltn, uSharpness) * uGlow;
   ltn *= clamp(1.0 - mGlow, 0.0, 1.0);
 
-  float h = clamp(0.5 + (peaks - peaks2) * 0.8, 0.0, 1.0);
+  float h = clamp(0.5 + (n1 - n2) * 0.9, 0.0, 1.0);
   vec3 col = palette(h);
 
   vec3 outc = col * ltn;
@@ -251,10 +240,11 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const container = containerRef.current;
     if (!container || !hasEntered) return;
 
+    // Downscale ambient buffer DPR to 0.45 (or 0.35 on mobile) to eliminate fill-rate overhead
     const effectiveDpr = dpr ?? (
       typeof window !== 'undefined'
-        ? (window.innerWidth < 768 ? 1 : Math.min(window.devicePixelRatio || 1, 2))
-        : 1
+        ? (window.innerWidth < 768 ? 0.35 : 0.45)
+        : 0.45
     );
 
     let renderer: Renderer;
@@ -263,7 +253,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       renderer = new Renderer({
         dpr: effectiveDpr,
         alpha: true,
-        antialias: true,
+        antialias: false, // ambient liquid is naturally soft
       });
       rendererRef.current = renderer;
       gl = renderer.gl;
@@ -321,7 +311,12 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const resize = () => {
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
-      renderer.setSize(rect.width, rect.height);
+      // Cap maximum render dimensions to 800x450 to protect fill rate
+      const maxW = 800;
+      const maxH = 480;
+      const targetW = Math.min(rect.width * effectiveDpr, maxW);
+      const targetH = Math.min(rect.height * effectiveDpr, maxH);
+      renderer.setSize(targetW, targetH);
       uniforms.iResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight, 1];
     };
 
@@ -352,12 +347,19 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     }
 
     let isIntersecting = false;
+    let lastRenderTime = 0;
+    const FRAME_MS = 1000 / 24; // 24 FPS cap for ambient liquid flow
+
     const loop = (t: number) => {
-      if (!isIntersecting) {
+      if (!isIntersecting || document.hidden) {
         rafRef.current = null;
         return;
       }
       rafRef.current = requestAnimationFrame(loop);
+
+      if (t - lastRenderTime < FRAME_MS) return;
+      lastRenderTime = t - ((t - lastRenderTime) % FRAME_MS);
+
       uniforms.iTime.value = t * 0.001;
       if (mouseDampening > 0) {
         if (!lastTimeRef.current) lastTimeRef.current = t;
@@ -376,26 +378,44 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       if (!paused && programRef.current && meshRef.current) {
         try {
           renderer.render({ scene: meshRef.current });
-        } catch (e) {
+        } catch {
           // ignore render context switch
         }
       }
     };
 
+    const startLoopIfNeeded = () => {
+      if (isIntersecting && !document.hidden && !rafRef.current) {
+        lastTimeRef.current = performance.now();
+        lastRenderTime = performance.now();
+        rafRef.current = requestAnimationFrame(loop);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      } else {
+        startLoopIfNeeded();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     const io = new IntersectionObserver(([entry]) => {
       isIntersecting = entry.isIntersecting;
       if (isIntersecting) {
-        lastTimeRef.current = performance.now();
-        if (!rafRef.current) {
-          rafRef.current = requestAnimationFrame(loop);
-        }
+        startLoopIfNeeded();
       }
-    }, { rootMargin: '150px' });
+    }, { rootMargin: '100px' });
     io.observe(container);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (mouseInteraction) window.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       io.disconnect();
       ro.disconnect();
       if (canvas.parentElement === container) {
