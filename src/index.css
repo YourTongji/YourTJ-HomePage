@@ -858,18 +858,8 @@ html.dark {
    * devices stay on their own layer while everything inside them stays put.
    */
   .device-float {
-    animation: device-float 8s ease-in-out infinite;
-    will-change: transform;
-  }
-
-  @keyframes device-float {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -8px, 0);
-    }
+    animation: none;
+    transform: none;
   }
 
   /*

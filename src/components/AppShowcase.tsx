@@ -689,7 +689,7 @@ export const AppShowcase: React.FC = () => {
                     />
                   </button>
                 ) : (
-                  <div className={`h-full w-full ${isActive && !isCompact ? 'device-float' : ''}`}>
+                  <div className="h-full w-full">
                     {screensNearView && (
                       <AppDevice
                         entry={entry}

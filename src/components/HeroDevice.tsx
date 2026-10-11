@@ -78,7 +78,7 @@ export const HeroDevice: React.FC = React.memo(() => {
             ref={tiltRef}
             style={{ width: DEVICE_W, height: DEVICE_H, transformStyle: 'preserve-3d' }}
           >
-            <div className="device-float h-full w-full">
+            <div className="h-full w-full">
               <AppDevice
               entry={entry}
               screenWidth={SW}
