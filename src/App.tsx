@@ -22,9 +22,6 @@ const DeferredContributors = React.lazy(() =>
 const DeferredCommunity = React.lazy(() =>
   import('./components/CommunitySection').then(({ CommunitySection }) => ({ default: CommunitySection })),
 );
-const DeferredFerrofluid = React.lazy(() =>
-  import('./components/Ferrofluid').then(({ Ferrofluid }) => ({ default: Ferrofluid })),
-);
 
 const DeferredSection: React.FC<{
   id: string;
@@ -150,46 +147,8 @@ const AppContent: React.FC = () => {
         <AppShowcaseRegion />
         <ProductPreviewRegion />
 
-        {/* Lower Ambient Region: App Download, Community, and Footer enveloped in optimized interactive liquid Ferrofluid */}
+        {/* Lower Region: App Download, Contributors, Community, and Footer */}
         <div className="relative">
-          {/* Continuous liquid ambient background with soft feathered top mask and complete bottom coverage */}
-          <div
-            className="pointer-events-none absolute inset-0 -top-28 bottom-0 overflow-hidden z-0"
-            style={{
-              maskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black 100%)',
-              WebkitMaskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black 100%)',
-            }}
-            aria-hidden="true"
-          >
-            <React.Suspense fallback={null}>
-              <DeferredFerrofluid
-                colors={
-                  theme === 'dark'
-                    ? ['#00bc7d', '#72f0a6', '#38bdf8', '#10b981', '#06b6d4']
-                    : ['#036099', '#0284c7', '#059669', '#0d9488', '#10b981']
-                }
-                speed={0.35}
-                scale={1.5}
-                turbulence={0.9}
-                fluidity={0.14}
-                rimWidth={0.22}
-                sharpness={2.6}
-                shimmer={1.2}
-                glow={theme === 'dark' ? 1.7 : 1.3}
-                flowDirection="down"
-                opacity={theme === 'dark' ? 0.48 : 0.3}
-                mouseInteraction={true}
-                mouseStrength={1.15}
-                mouseRadius={0.32}
-                mouseDampening={0.14}
-                mixBlendMode={theme === 'dark' ? 'screen' : 'multiply'}
-                className="w-full h-full min-h-full"
-              />
-            </React.Suspense>
-          </div>
-
           <div className="relative z-10">
             <DeferredSection
               id="download"

@@ -3,6 +3,7 @@ import { useI18n } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
 import { Reveal } from './Reveal';
 import { ArrowUpRightIcon, GithubIcon } from './icons';
+import { LightRays } from './LightRays';
 
 interface Committer {
   login: string;
@@ -137,6 +138,39 @@ export const ContributorsSection: React.FC = () => {
       aria-labelledby="contributors-title"
       className="relative pt-6 pb-16 sm:pt-8 sm:pb-24"
     >
+      {/*
+        Spotlight LightRays (React Bits):
+        Positioned strictly below AppDownloadSection (top-0 within ContributorsSection).
+        Faded seamlessly at the top edge (starting at transparent 0%) and internal 4-sided
+        shader smoothstep feathering, eliminating any straight lines, mask seams, or cutoffs.
+      */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 overflow-hidden"
+        style={{
+          maskImage:
+            'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 18%, black 36%, black 72%, transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 18%, black 36%, black 72%, transparent 100%)',
+        }}
+        aria-hidden="true"
+      >
+        <LightRays
+          raysOrigin="top-center"
+          raysColor={isDark ? '#72f0a6' : '#38bdf8'}
+          raysSpeed={1.0}
+          lightSpread={0.9}
+          rayLength={2.0}
+          fadeDistance={1.3}
+          followMouse={true}
+          mouseInfluence={0.12}
+          distortion={0.04}
+          noiseAmount={0.03}
+          className={`w-full h-full transition-all duration-500 ${
+            isDark ? 'opacity-85 mix-blend-screen' : 'opacity-80 mix-blend-normal'
+          }`}
+        />
+      </div>
+
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
         {/* Soft Organic Atmospheric Glow: Sky goose blue in light mode, aurora mint in dark mode */}
         <div
