@@ -883,7 +883,7 @@ html.dark {
     inset: 0;
     pointer-events: none;
     border-radius: inherit;
-    /* Static realistic glass reflection sheen */
+    /* Static realistic glass reflection sheen without animation */
     background: linear-gradient(
       132deg,
       rgba(255, 255, 255, 0.22) 0%,
@@ -893,42 +893,9 @@ html.dark {
     overflow: hidden;
   }
 
-  .device-glare::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      108deg,
-      transparent 32%,
-      rgba(255, 255, 255, 0.35) 45%,
-      rgba(15, 23, 42, 0.06) 52%,
-      transparent 64%
-    );
-    transform: translateX(-150%);
-    animation: device-glare-sweep 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    will-change: transform;
-  }
-
-  @keyframes device-glare-sweep {
-    0% {
-      transform: translateX(-150%);
-    }
-    38% {
-      transform: translateX(150%);
-    }
-    100% {
-      transform: translateX(150%);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .device-float,
-    .device-glare {
+    .device-float {
       animation: none;
-    }
-
-    .device-glare {
-      display: none;
     }
   }
 

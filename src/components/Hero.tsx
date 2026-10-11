@@ -232,7 +232,7 @@ export const Hero: React.FC = () => {
 
           {isDesktop && (
             <div className="hidden lg:block motion-safe:animate-fade-up [animation-delay:220ms]">
-              <React.Suspense fallback={<div aria-hidden="true" className="h-[clamp(430px,62vh,620px)] w-full" />}>
+              <React.Suspense fallback={<div aria-hidden="true" className="h-[clamp(470px,66vh,670px)] w-full" />}>
                 <DeferredHeroDevice />
               </React.Suspense>
             </div>
