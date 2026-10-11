@@ -90,7 +90,6 @@ export const HeroDevice: React.FC = React.memo(() => {
                   setComposeOpen(false);
                 },
               }}
-              screenClassName="motion-safe:animate-fade-up"
               overlay={
                 <>
                   {shellIndex === SHELL_FAB_BRANCH && (
