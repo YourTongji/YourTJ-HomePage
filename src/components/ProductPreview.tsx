@@ -889,7 +889,8 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
               transform: `scale(${scale})`,
             }}
           >
-            <React.Suspense fallback={null}>{isDesktop ? (
+            {isDesktop ? (
+              // Keep slide shells mounted so ScrollTrigger can initialize before the lazy page chunks load.
               PREVIEW_SLIDES.map((s, i) => {
                 const PageComp = hubPreviewPageFor(s.id);
                 return (
@@ -902,16 +903,19 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
                       visibility: i === 0 ? 'inherit' : 'hidden',
                     }}
                   >
-                    <PageComp />
+                    <React.Suspense fallback={null}>
+                      <PageComp />
+                    </React.Suspense>
                   </div>
                 );
               })
             ) : (
               <div key={slide?.id || 'default'} data-preview-page>
-                {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
+                <React.Suspense fallback={null}>
+                  {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
+                </React.Suspense>
               </div>
             )}
-            </React.Suspense>
           </div>
         </div>
       </div>
