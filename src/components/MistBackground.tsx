@@ -11,7 +11,7 @@ export interface MistBackgroundProps {
 }
 
 export const MistBackground: React.FC<MistBackgroundProps> = ({
-  fps = 10,
+  fps = 12,
   idleFps = 2,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);

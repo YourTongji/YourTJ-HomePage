@@ -5,10 +5,18 @@
   touch-action: pan-y;
   user-select: none;
   overflow: visible;
+  /* Isolated partial GPU composite layer: restricts redraws to this surface */
+  contain: layout style;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .tech-text-canvas {
   display: block;
   position: absolute;
   pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }

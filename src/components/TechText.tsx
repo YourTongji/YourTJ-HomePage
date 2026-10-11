@@ -694,18 +694,18 @@ export const TechText: React.FC<TechTextProps> = ({
         lens.y = targetY;
       }
       if (active) {
-        const lag = pointer.inside ? 0.05 : 0.22;
+        const lag = pointer.inside ? 0.12 : 0.28;
         lens.x = approach(lens.x, targetX, dt, lag);
         lens.y = approach(lens.y, targetY, dt, lag);
       }
       placed = active;
-      presence = approach(presence, s.reveal === 'area' && active && dragging < 0 ? 1 : 0, dt, 0.16);
+      presence = approach(presence, s.reveal === 'area' && active && dragging < 0 ? 1 : 0, dt, 0.2);
 
       let moving = false;
       glyphs.forEach((glyph, i) => {
         if (i === dragging) {
-          glyph.offset.x = approach(glyph.offset.x, pointer.x - grab.x, dt, 0.03);
-          glyph.offset.y = approach(glyph.offset.y, pointer.y - grab.y, dt, 0.03);
+          glyph.offset.x = approach(glyph.offset.x, pointer.x - grab.x, dt, 0.04);
+          glyph.offset.y = approach(glyph.offset.y, pointer.y - grab.y, dt, 0.04);
           glyph.velocity.x = 0;
           glyph.velocity.y = 0;
           moving = true;
@@ -739,18 +739,19 @@ export const TechText: React.FC<TechTextProps> = ({
           frame.x2 = bx2;
           frame.y2 = by2;
         }
-        const glide = focus === dragging ? 0.02 : 0.08;
+        // Slower glide speed at 24fps to eliminate discrete jumpiness and feel fluid
+        const glide = focus === dragging ? 0.04 : 0.18;
         frame.x1 = approach(frame.x1, bx1, dt, glide);
         frame.y1 = approach(frame.y1, by1, dt, glide);
         frame.x2 = approach(frame.x2, bx2, dt, glide);
         frame.y2 = approach(frame.y2, by2, dt, glide);
         frame.index = focus;
       }
-      frame.alpha = approach(frame.alpha, focus >= 0 && s.selection ? 1 : 0, dt, 0.1);
+      frame.alpha = approach(frame.alpha, focus >= 0 && s.selection ? 1 : 0, dt, 0.16);
 
       glyphs.forEach((glyph, i) => {
         const target = s.reveal === 'letter' && i === focus && i !== dragging ? 1 : 0;
-        glyph.outline = approach(glyph.outline, target, dt, 0.09);
+        glyph.outline = approach(glyph.outline, target, dt, 0.15);
         if (Math.abs(glyph.outline - target) > 0.002) moving = true;
         else glyph.outline = target;
       });
