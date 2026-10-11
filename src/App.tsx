@@ -152,14 +152,14 @@ const AppContent: React.FC = () => {
 
         {/* Lower Ambient Region: App Download, Community, and Footer enveloped in optimized interactive liquid Ferrofluid */}
         <div className="relative">
-          {/* Continuous liquid ambient background with soft feathered top mask */}
+          {/* Continuous liquid ambient background with soft feathered top mask and complete bottom coverage */}
           <div
-            className="pointer-events-none absolute inset-0 -top-28 overflow-hidden z-0"
+            className="pointer-events-none absolute inset-0 -top-28 bottom-0 overflow-hidden z-0"
             style={{
               maskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
+                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black 100%)',
               WebkitMaskImage:
-                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black calc(100% - 60px), transparent 100%)',
+                'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.7) 120px, black 220px, black 100%)',
             }}
             aria-hidden="true"
           >
@@ -170,22 +170,22 @@ const AppContent: React.FC = () => {
                     ? ['#00bc7d', '#72f0a6', '#38bdf8', '#10b981', '#06b6d4']
                     : ['#036099', '#0284c7', '#059669', '#0d9488', '#10b981']
                 }
-                speed={0.28}
+                speed={0.35}
                 scale={1.5}
-                turbulence={0.8}
-                fluidity={0.15}
+                turbulence={0.9}
+                fluidity={0.14}
                 rimWidth={0.22}
-                sharpness={2.4}
-                shimmer={1.0}
-                glow={theme === 'dark' ? 1.6 : 1.2}
+                sharpness={2.6}
+                shimmer={1.2}
+                glow={theme === 'dark' ? 1.7 : 1.3}
                 flowDirection="down"
-                opacity={theme === 'dark' ? 0.45 : 0.28}
+                opacity={theme === 'dark' ? 0.48 : 0.3}
                 mouseInteraction={true}
-                mouseStrength={1.1}
+                mouseStrength={1.15}
                 mouseRadius={0.32}
                 mouseDampening={0.14}
                 mixBlendMode={theme === 'dark' ? 'screen' : 'multiply'}
-                className="w-full h-full"
+                className="w-full h-full min-h-full"
               />
             </React.Suspense>
           </div>

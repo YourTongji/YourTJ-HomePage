@@ -814,7 +814,8 @@ export const TechText: React.FC<TechTextProps> = ({
     };
 
     let lastRenderTime = 0;
-    const FRAME_MS = 1000 / 60; // 60 FPS cap
+    const TARGET_FPS = 59.65;
+    const FRAME_MS = 1000 / TARGET_FPS; // Exact 59.65 FPS top-off cap
 
     const tick = (now: number) => {
       raf = 0;

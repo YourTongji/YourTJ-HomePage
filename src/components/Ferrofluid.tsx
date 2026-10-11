@@ -107,26 +107,10 @@ vec3 palette(float h) {
   return uColor7;
 }
 
-float hash(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
+float hash(vec3 p3) {
+  p3 = fract(p3 * 0.1031);
+  p3 += dot(p3, p3.zyx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
-}
-
-float sinlerp(float a, float b, float w) {
-  return mix(a, b, (sin(w * PI - PI / 2.0) + 1.0) / 2.0);
-}
-
-float vn(vec2 p, float s) {
-  vec2 cellp = floor(p / s);
-  vec2 relp = mod(p, s);
-  float g1 = hash(cellp);
-  float g2 = hash(cellp + vec2(1.0, 0.0));
-  float g3 = hash(cellp + vec2(1.0, 1.0));
-  float g4 = hash(cellp + vec2(0.0, 1.0));
-  float bx = sinlerp(g1, g2, relp.x / s);
-  float tx = sinlerp(g4, g3, relp.x / s);
-  return sinlerp(bx, tx, relp.y / s);
 }
 
 float smin(float a, float b, float k) {
@@ -134,22 +118,44 @@ float smin(float a, float b, float k) {
   return -k * log2(r);
 }
 
+float sinlerp(float a, float b, float w) {
+  return mix(a, b, (sin(w * PI - PI / 2.0) + 1.0) / 2.0);
+}
+
+float vn(vec2 p, float s, float seed) {
+  vec2 cellp = floor(p / s);
+  vec2 relp = mod(p, s);
+  float g1 = hash(vec3(cellp, seed));
+  float g2 = hash(vec3(cellp.x + 1.0, cellp.y, seed));
+  float g3 = hash(vec3(cellp.x + 1.0, cellp.y + 1.0, seed));
+  float g4 = hash(vec3(cellp.x, cellp.y + 1.0, seed));
+  float bx = sinlerp(g1, g2, relp.x / s);
+  float tx = sinlerp(g4, g3, relp.x / s);
+  return sinlerp(bx, tx, relp.y / s);
+}
+
+// 2-octave high-efficiency fractal noise (replaces heavy 5-octave dbn)
+float dbn(vec2 p, float s, float seed) {
+  return vn(p, s, seed) * 0.65 + vn(p * 1.7 + vec2(17.3, 31.7), s * 0.55, seed + 0.3) * 0.35;
+}
+
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-  float ref = 650.0 / max(uScale, 0.05);
+  float ref = 700.0 / max(uScale, 0.05);
   vec2 p = fragCoord / iResolution.y * ref;
 
-  float spd = 120.0 * uSpeed;
+  float spd = 160.0 * uSpeed;
   float t = iTime;
 
   vec2 dir = uFlow;
   vec2 perp = vec2(-dir.y, dir.x);
 
-  // High-performance 2-layer liquid flow distortion field
-  float distort = vn(p + perp * (t * spd), 80.0) * 38.0 * uTurbulence;
-  float n1 = vn(p + distort + dir * (t * spd * 0.45), 48.0);
-  float n2 = vn(p - distort - dir * (t * spd * 0.45), 64.0);
+  float distort1 = vn(p + perp * (t * spd), 60.0, 10.0) * 45.0 * uTurbulence;
+  float distort2 = vn(p - perp * (t * spd), 110.0, 15.0) * 85.0 * uTurbulence;
 
-  float liquid = smin(n1, n2, max(uFluidity, 0.015));
+  float peaks = dbn(p + distort1 + dir * (t * spd * 0.5), 40.0, 1.0);
+  float peaks2 = dbn(p + distort2 - dir * (t * spd * 0.5), 40.0, 0.0);
+
+  float mapeaks = smin(peaks, peaks2, max(uFluidity, 0.001));
 
   float mGlow = 0.0;
   if (uMouseEnabled > 0.5) {
@@ -159,12 +165,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     mGlow = exp(-md * md / (rr * rr)) * uMouseStrength;
   }
 
-  float band = (uRimWidth - abs((liquid - 0.42) * 2.0)) * 5.0;
-  float ltn = clamp(band, 0.0, 1.0);
+  float band = (uRimWidth - abs((mapeaks - 0.4) * 2.0)) * 5.0;
+  float ltn = clamp(band - vn(p + dir * (t * spd * 0.5), 60.0, 12.0) * uShimmer, 0.0, 1.0);
   ltn = pow(ltn, uSharpness) * uGlow;
   ltn *= clamp(1.0 - mGlow, 0.0, 1.0);
 
-  float h = clamp(0.5 + (n1 - n2) * 0.9, 0.0, 1.0);
+  float h = clamp(0.5 + (peaks - peaks2) * 0.8, 0.0, 1.0);
   vec3 col = palette(h);
 
   vec3 outc = col * ltn;
@@ -311,12 +317,19 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const resize = () => {
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
-      // Cap maximum render dimensions to 800x450 to protect fill rate
-      const maxW = 800;
-      const maxH = 480;
-      const targetW = Math.min(rect.width * effectiveDpr, maxW);
-      const targetH = Math.min(rect.height * effectiveDpr, maxH);
+
+      // Downscale internal buffer resolution via effectiveDpr (0.45x) to cut fill rate by ~80%
+      const targetW = Math.max(1, Math.round(rect.width * effectiveDpr));
+      const targetH = Math.max(1, Math.round(rect.height * effectiveDpr));
       renderer.setSize(targetW, targetH);
+
+      // Ensure canvas spans 100% of the entire container height and width
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.position = 'absolute';
+      canvas.style.inset = '0';
+      canvas.style.display = 'block';
+
       uniforms.iResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight, 1];
     };
 
@@ -332,9 +345,9 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
         e.clientX >= rect.left - 50 &&
         e.clientX <= rect.right + 50
       ) {
-        const sc = renderer.dpr || 1;
-        const x = (e.clientX - rect.left) * sc;
-        const y = (rect.height - (e.clientY - rect.top)) * sc;
+        const scY = gl.drawingBufferHeight / rect.height;
+        const x = (e.clientX - rect.left) * scY;
+        const y = (rect.height - (e.clientY - rect.top)) * scY;
         mouseTargetRef.current = [x, y];
         if (mouseDampening <= 0) {
           uniforms.iMouse.value = [x, y];
@@ -348,7 +361,8 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
 
     let isIntersecting = false;
     let lastRenderTime = 0;
-    const FRAME_MS = 1000 / 24; // 24 FPS cap for ambient liquid flow
+    const TARGET_FPS = 59.65;
+    const FRAME_MS = 1000 / TARGET_FPS; // Exact 59.65 FPS top-off cap
 
     const loop = (t: number) => {
       if (!isIntersecting || document.hidden) {
