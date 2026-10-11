@@ -9,30 +9,6 @@ const DAMPING = 22;
 const approach = (current: number, target: number, dt: number, seconds: number): number =>
   current + (target - current) * (1 - Math.exp(-dt / seconds));
 
-const parseColor = (color: string | undefined): [number, number, number] => {
-  if (!color) return [255, 255, 255];
-  if (color.startsWith('rgb')) {
-    const match = color.match(/\d+/g);
-    if (match && match.length >= 3) {
-      return [parseInt(match[0], 10), parseInt(match[1], 10), parseInt(match[2], 10)];
-    }
-  }
-  let h = String(color || '').replace('#', '');
-  if (h.length === 3) h = h.replace(/./g, (c) => c + c);
-  const n = parseInt(h.slice(0, 6), 16);
-  return Number.isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-};
-
-const colorCache = new Map<string, [number, number, number]>();
-const getCachedRgb = (color: string | undefined): [number, number, number] => {
-  const key = color || '#ffffff';
-  let cached = colorCache.get(key);
-  if (!cached) {
-    cached = parseColor(color);
-    colorCache.set(key, cached);
-  }
-  return cached;
-};
 
 const noise = (...values: number[]): number => {
   let h = 2166136261;
@@ -219,7 +195,11 @@ export const TechText: React.FC<TechTextProps> = ({
     const lens = { x: 0, y: 0 };
     const frame = { x1: 0, y1: 0, x2: 0, y2: 0, alpha: 0, index: -1 };
     let fullRenderNeeded = true;
-    let lastDirtyBox: DirtyRect | null = null;
+    const lastDirtyBox: DirtyRect = { x: 0, y: 0, w: 0, h: 0, lx: 0, rx: 0, ty: 0, by: 0 };
+    let hasLastDirty = false;
+    const currDirtyBox: DirtyRect = { x: 0, y: 0, w: 0, h: 0, lx: 0, rx: 0, ty: 0, by: 0 };
+    const tempGlyphDirtyBox: DirtyRect = { x: 0, y: 0, w: 0, h: 0, lx: 0, rx: 0, ty: 0, by: 0 };
+    const unionClearBox = { minX: 0, minY: 0, maxX: 0, maxY: 0, lx: 0, rx: 0, ty: 0, by: 0, active: false };
 
     const refreshFonts = () => {
       layoutKey = '';
@@ -584,7 +564,9 @@ export const TechText: React.FC<TechTextProps> = ({
       const perimeter = 2 * (w + h);
       const seed = frame.index + 1;
       const grid = 3;
-      const [ar, ag, ab] = getCachedRgb(s.accentColor);
+      const accent = s.accentColor || '#ffffff';
+      ctx.fillStyle = accent;
+      ctx.strokeStyle = accent;
       const speckCount = Math.min(s.specks ?? 12, 8);
 
       for (let k = 0; k < speckCount; k++) {
@@ -605,16 +587,13 @@ export const TechText: React.FC<TechTextProps> = ({
         const alpha = a * (large ? 0.3 + 0.4 * tone : 0.3 + 0.6 * tone) * blink;
         const left = Math.round(x - size / 2);
         const top = Math.round(y - size / 2);
-        const col = `rgba(${ar}, ${ag}, ${ab}, ${alpha.toFixed(2)})`;
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
         if (tone < 0.26 || (large && tone < 0.78)) {
-          ctx.strokeStyle = col;
           ctx.strokeRect(left + 0.5, top + 0.5, size, size);
           if (large && tone > 0.5) {
-            ctx.fillStyle = col;
             ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
           }
         } else {
-          ctx.fillStyle = col;
           ctx.fillRect(left, top, size, size);
         }
       }
@@ -625,10 +604,11 @@ export const TechText: React.FC<TechTextProps> = ({
           const [x, y] = perimeterPoint(head - i * 6, w, h);
           const size = i === 0 ? 3 : 2;
           const dotAlpha = a * (i === 0 ? 0.9 : i === 1 ? 0.5 : 0.25);
-          ctx.fillStyle = `rgba(${ar}, ${ag}, ${ab}, ${dotAlpha.toFixed(2)})`;
+          ctx.globalAlpha = Math.max(0, Math.min(1, dotAlpha));
           ctx.fillRect(Math.round(x - size / 2), Math.round(y - size / 2), size, size);
         }
       }
+      ctx.globalAlpha = 1;
     };
 
     const drawFrame = (s: TechTextProps) => {
@@ -639,9 +619,11 @@ export const TechText: React.FC<TechTextProps> = ({
       const y1 = crisp(frame.y1);
       const x2 = crisp(frame.x2);
       const y2 = crisp(frame.y2);
-      const [ar, ag, ab] = getCachedRgb(s.accentColor);
+      const accent = s.accentColor || '#ffffff';
       const bleed = Math.max(0, s.bleed ?? 100);
       ctx.setTransform(dpr, 0, 0, dpr, bleed * dpr, bleed * dpr);
+      ctx.fillStyle = accent;
+      ctx.strokeStyle = accent;
 
       const moved = Math.hypot(glyph.offset.x, glyph.offset.y);
       if (moved > 1) {
@@ -652,19 +634,19 @@ export const TechText: React.FC<TechTextProps> = ({
         ctx.lineTo(hx + glyph.offset.x, hy + glyph.offset.y);
         ctx.setLineDash([3, 4]);
         ctx.lineWidth = 1;
-        ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${(0.45 * a).toFixed(2)})`;
+        ctx.globalAlpha = Math.max(0, Math.min(1, 0.45 * a));
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.rect(Math.round(hx) - 2, Math.round(hy) - 2, 4, 4);
-        ctx.fillStyle = `rgba(${ar}, ${ag}, ${ab}, ${(0.7 * a).toFixed(2)})`;
+        ctx.globalAlpha = Math.max(0, Math.min(1, 0.7 * a));
         ctx.fill();
       }
 
       ctx.beginPath();
       ctx.rect(x1, y1, x2 - x1, y2 - y1);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${(0.5 * a).toFixed(2)})`;
+      ctx.globalAlpha = Math.max(0, Math.min(1, 0.5 * a));
       ctx.stroke();
 
       ctx.beginPath();
@@ -676,7 +658,7 @@ export const TechText: React.FC<TechTextProps> = ({
       ]) {
         ctx.rect(Math.round(cx) - 2, Math.round(cy) - 2, 5, 5);
       }
-      ctx.fillStyle = `rgba(${ar}, ${ag}, ${ab}, ${(0.95 * a).toFixed(2)})`;
+      ctx.globalAlpha = Math.max(0, Math.min(1, 0.95 * a));
       ctx.fill();
 
       if ((s.specks ?? 15) > 0) {
@@ -684,26 +666,31 @@ export const TechText: React.FC<TechTextProps> = ({
         drawSpecks(s, a);
       }
 
-      if (!s.labels) return;
+      if (!s.labels) {
+        ctx.globalAlpha = 1;
+        return;
+      }
       ctx.font = LABEL_FONT;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
-      ctx.fillStyle = `rgba(${ar}, ${ag}, ${ab}, ${(0.62 * a).toFixed(2)})`;
+      ctx.globalAlpha = Math.max(0, Math.min(1, 0.62 * a));
       const label =
         moved > 1
           ? `${signed(Math.round(glyph.offset.x))}, ${signed(Math.round(-glyph.offset.y))}`
           : `${glyph.char}  ${Math.round(glyph.box.x2 - glyph.box.x1)} × ${Math.round(glyph.box.y2 - glyph.box.y1)}`;
       ctx.fillText(label, Math.round(frame.x1), Math.round(frame.y1) - 7);
+      ctx.globalAlpha = 1;
     };
 
-    const getFrameDirtyBox = (
+    const computeFrameDirtyBox = (
+      target: DirtyRect,
       fx1: number,
       fy1: number,
       fx2: number,
       fy2: number,
       bleed: number,
       targetDpr: number
-    ): DirtyRect => {
+    ): void => {
       const pad = 34;
       const padTop = 34;
       const minW = 110;
@@ -722,19 +709,22 @@ export const TechText: React.FC<TechTextProps> = ({
       const px2 = Math.min(canvas.width, Math.ceil((rx + bleed) * targetDpr) + 2);
       const py2 = Math.min(canvas.height, Math.ceil((by + bleed) * targetDpr) + 2);
 
-      return {
-        x: px1,
-        y: py1,
-        w: Math.max(0, px2 - px1),
-        h: Math.max(0, py2 - py1),
-        lx,
-        rx,
-        ty,
-        by,
-      };
+      target.x = px1;
+      target.y = py1;
+      target.w = Math.max(0, px2 - px1);
+      target.h = Math.max(0, py2 - py1);
+      target.lx = lx;
+      target.rx = rx;
+      target.ty = ty;
+      target.by = by;
     };
 
-    const getGlyphDirtyBox = (g: GlyphItem, bleed: number, targetDpr: number): DirtyRect => {
+    const computeGlyphDirtyBox = (
+      target: DirtyRect,
+      g: GlyphItem,
+      bleed: number,
+      targetDpr: number
+    ): void => {
       const pad = 16;
       const lx = Math.min(g.box.x1, g.box.x1 + g.offset.x) - pad;
       const rx = Math.max(g.box.x2, g.box.x2 + g.offset.x) + pad;
@@ -746,25 +736,23 @@ export const TechText: React.FC<TechTextProps> = ({
       const px2 = Math.min(canvas.width, Math.ceil((rx + bleed) * targetDpr) + 2);
       const py2 = Math.min(canvas.height, Math.ceil((by + bleed) * targetDpr) + 2);
 
-      return {
-        x: px1,
-        y: py1,
-        w: Math.max(0, px2 - px1),
-        h: Math.max(0, py2 - py1),
-        lx,
-        rx,
-        ty,
-        by,
-      };
+      target.x = px1;
+      target.y = py1;
+      target.w = Math.max(0, px2 - px1);
+      target.h = Math.max(0, py2 - py1);
+      target.lx = lx;
+      target.rx = rx;
+      target.ty = ty;
+      target.by = by;
     };
 
-    const intersects = (g: GlyphItem, b: DirtyRect): boolean => {
+    const intersectsBounds = (g: GlyphItem, lx: number, rx: number, ty: number, by: number): boolean => {
       const pad = 10;
       const gx1 = Math.min(g.box.x1, g.box.x1 + g.offset.x) - pad;
       const gx2 = Math.max(g.box.x2, g.box.x2 + g.offset.x) + pad;
       const gy1 = Math.min(g.box.y1, g.box.y1 + g.offset.y) - pad;
       const gy2 = Math.max(g.box.y2, g.box.y2 + g.offset.y) + pad;
-      return !(gx2 < b.lx || gx1 > b.rx || gy2 < b.ty || gy1 > b.by);
+      return !(gx2 < lx || gx1 > rx || gy2 < ty || gy1 > by);
     };
 
     const renderFull = () => {
@@ -896,41 +884,66 @@ export const TechText: React.FC<TechTextProps> = ({
         if (presence > 0.001) drawReveal(s);
         if (frame.alpha > 0.005) {
           drawFrame(s);
-          lastDirtyBox = getFrameDirtyBox(frame.x1, frame.y1, frame.x2, frame.y2, bleed, dpr);
+          computeFrameDirtyBox(lastDirtyBox, frame.x1, frame.y1, frame.x2, frame.y2, bleed, dpr);
+          hasLastDirty = true;
         } else {
-          lastDirtyBox = null;
+          hasLastDirty = false;
         }
         fullRenderNeeded = false;
       } else {
-        const dirtyBoxes: DirtyRect[] = [];
-        if (lastDirtyBox) {
-          dirtyBoxes.push(lastDirtyBox);
+        unionClearBox.active = false;
+        const includeBox = (b: DirtyRect) => {
+          if (!unionClearBox.active) {
+            unionClearBox.minX = b.x;
+            unionClearBox.minY = b.y;
+            unionClearBox.maxX = b.x + b.w;
+            unionClearBox.maxY = b.y + b.h;
+            unionClearBox.lx = b.lx;
+            unionClearBox.rx = b.rx;
+            unionClearBox.ty = b.ty;
+            unionClearBox.by = b.by;
+            unionClearBox.active = true;
+          } else {
+            if (b.x < unionClearBox.minX) unionClearBox.minX = b.x;
+            if (b.y < unionClearBox.minY) unionClearBox.minY = b.y;
+            if (b.x + b.w > unionClearBox.maxX) unionClearBox.maxX = b.x + b.w;
+            if (b.y + b.h > unionClearBox.maxY) unionClearBox.maxY = b.y + b.h;
+            if (b.lx < unionClearBox.lx) unionClearBox.lx = b.lx;
+            if (b.rx > unionClearBox.rx) unionClearBox.rx = b.rx;
+            if (b.ty < unionClearBox.ty) unionClearBox.ty = b.ty;
+            if (b.by > unionClearBox.by) unionClearBox.by = b.by;
+          }
+        };
+
+        if (hasLastDirty) {
+          includeBox(lastDirtyBox);
         }
-        let currDirty: DirtyRect | null = null;
         if (frame.alpha > 0.005) {
-          currDirty = getFrameDirtyBox(frame.x1, frame.y1, frame.x2, frame.y2, bleed, dpr);
-          dirtyBoxes.push(currDirty);
+          computeFrameDirtyBox(currDirtyBox, frame.x1, frame.y1, frame.x2, frame.y2, bleed, dpr);
+          includeBox(currDirtyBox);
         }
-        for (const glyph of glyphs) {
+
+        for (let i = 0; i < glyphs.length; i++) {
+          const glyph = glyphs[i];
           if ((glyph.outline > 0.002 && glyph.outline < 0.998) || Math.hypot(glyph.offset.x, glyph.offset.y) > 0.05) {
-            dirtyBoxes.push(getGlyphDirtyBox(glyph, bleed, dpr));
+            computeGlyphDirtyBox(tempGlyphDirtyBox, glyph, bleed, dpr);
+            includeBox(tempGlyphDirtyBox);
           }
         }
 
-        if (dirtyBoxes.length > 0) {
+        if (unionClearBox.active) {
           ctx.setTransform(1, 0, 0, 1, 0, 0);
-          for (const b of dirtyBoxes) {
-            ctx.clearRect(b.x, b.y, b.w, b.h);
-          }
-          for (const glyph of glyphs) {
-            let hit = false;
-            for (const b of dirtyBoxes) {
-              if (intersects(glyph, b)) {
-                hit = true;
-                break;
-              }
+          ctx.clearRect(
+            unionClearBox.minX,
+            unionClearBox.minY,
+            Math.max(0, unionClearBox.maxX - unionClearBox.minX),
+            Math.max(0, unionClearBox.maxY - unionClearBox.minY)
+          );
+          for (let i = 0; i < glyphs.length; i++) {
+            const glyph = glyphs[i];
+            if (!intersectsBounds(glyph, unionClearBox.lx, unionClearBox.rx, unionClearBox.ty, unionClearBox.by)) {
+              continue;
             }
-            if (!hit) continue;
             const moved = Math.hypot(glyph.offset.x, glyph.offset.y);
             if (moved > 1) {
               ctx.globalAlpha = Math.min(1, moved / 24) * 0.55;
@@ -951,8 +964,18 @@ export const TechText: React.FC<TechTextProps> = ({
 
         if (frame.alpha > 0.005) {
           drawFrame(s);
+          lastDirtyBox.x = currDirtyBox.x;
+          lastDirtyBox.y = currDirtyBox.y;
+          lastDirtyBox.w = currDirtyBox.w;
+          lastDirtyBox.h = currDirtyBox.h;
+          lastDirtyBox.lx = currDirtyBox.lx;
+          lastDirtyBox.rx = currDirtyBox.rx;
+          lastDirtyBox.ty = currDirtyBox.ty;
+          lastDirtyBox.by = currDirtyBox.by;
+          hasLastDirty = true;
+        } else {
+          hasLastDirty = false;
         }
-        lastDirtyBox = currDirty;
       }
 
       const settling =
@@ -960,7 +983,7 @@ export const TechText: React.FC<TechTextProps> = ({
         sweeping ||
         Math.abs(presence - (s.reveal === 'area' && active && dragging < 0 ? 1 : 0)) > 0.002 ||
         frame.alpha > 0.005 ||
-        lastDirtyBox !== null;
+        hasLastDirty;
       if ((active || settling) && visible && alive) raf = requestAnimationFrame(tick);
     };
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useI18n } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
-import { LogoLoop, type LogoItem } from './LogoLoop';
 import { Reveal } from './Reveal';
 import { ArrowUpRightIcon, GithubIcon } from './icons';
 
@@ -102,38 +101,35 @@ export const ContributorsSection: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Map committers into LogoLoop items with refined concentric avatar containers
-  const committerItems: LogoItem[] = React.useMemo(
-    () =>
-      COMMITTERS.map((c) => ({
-        title: c.name,
-        href: c.htmlUrl,
-        ariaLabel: `${c.name} on GitHub`,
-        node: (
-          <div className="group/committer relative flex items-center gap-2.5 rounded-full border border-edge/80 bg-surface/70 py-1.5 pl-1.5 pr-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-surface-raised hover:shadow-lift active:scale-[0.96]">
-            {/* Concentric circular avatar container with zero distortion */}
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-edge/90 bg-surface-subtle overflow-hidden">
-              <img
-                src={import.meta.env.DEV ? c.avatar : `/.netlify/images?url=${encodeURIComponent(c.avatar)}&w=64&h=64&fit=cover&q=85`}
-                alt={c.name}
-                width={32}
-                height={32}
-                className="h-full w-full rounded-full object-cover block"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-            {/* Committer Name & Link Arrow */}
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="truncate text-xs sm:text-sm font-medium tracking-tight text-primary transition-colors group-hover/committer:text-accent">
-                {c.name}
-              </span>
-              <ArrowUpRightIcon className="h-3 w-3 shrink-0 text-tertiary transition-transform duration-200 group-hover/committer:translate-x-0.5 group-hover/committer:-translate-y-0.5 group-hover/committer:text-primary" />
-            </div>
-          </div>
-        ),
-      })),
-    []
+  const renderCommitterPill = (c: Committer, key: string) => (
+    <a
+      key={key}
+      href={c.htmlUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${c.name} on GitHub`}
+      className="group/committer relative flex shrink-0 items-center gap-2.5 rounded-full border border-edge/80 bg-surface/70 py-1.5 pl-1.5 pr-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-surface-raised hover:shadow-lift active:scale-[0.96]"
+    >
+      {/* Concentric circular avatar container with zero distortion */}
+      <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-edge/90 bg-surface-subtle overflow-hidden">
+        <img
+          src={import.meta.env.DEV ? c.avatar : `/.netlify/images?url=${encodeURIComponent(c.avatar)}&w=64&h=64&fit=cover&q=85`}
+          alt={c.name}
+          width={32}
+          height={32}
+          className="h-full w-full rounded-full object-cover block"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      {/* Committer Name & Link Arrow */}
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="truncate text-xs sm:text-sm font-medium tracking-tight text-primary transition-colors group-hover/committer:text-accent">
+          {c.name}
+        </span>
+        <ArrowUpRightIcon className="h-3 w-3 shrink-0 text-tertiary transition-transform duration-200 group-hover/committer:translate-x-0.5 group-hover/committer:-translate-y-0.5 group-hover/committer:text-primary" />
+      </div>
+    </a>
   );
 
   return (
@@ -141,8 +137,6 @@ export const ContributorsSection: React.FC = () => {
       aria-labelledby="contributors-title"
       className="relative pt-6 pb-16 sm:pt-8 sm:pb-24"
     >
-
-
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
         {/* Soft Organic Atmospheric Glow: Sky goose blue in light mode, aurora mint in dark mode */}
         <div
@@ -170,20 +164,25 @@ export const ContributorsSection: React.FC = () => {
           </p>
         </Reveal>
 
-        {/* Horizontal Marquee Loop of Committers: Fully integrated with transparent mask */}
-        <div className="mt-8 relative w-full overflow-hidden">
-          <LogoLoop
-            logos={committerItems}
-            speed={36}
-            direction="left"
-            gap={16}
-            logoHeight={42}
-            pauseOnHover={true}
-            hoverSpeed={8}
-            fadeOut={true}
-            ariaLabel="YourTJ-Hub committers"
-            className="w-full py-1"
-          />
+        {/* Horizontal Marquee Loop of Committers: Pure CSS Compositor Animation */}
+        <div
+          className="mt-8 relative w-full overflow-hidden select-none py-1"
+          style={{
+            maskImage:
+              'linear-gradient(to right, transparent 0%, black clamp(24px, 5vw, 64px), black calc(100% - clamp(24px, 5vw, 64px)), transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to right, transparent 0%, black clamp(24px, 5vw, 64px), black calc(100% - clamp(24px, 5vw, 64px)), transparent 100%)',
+          }}
+          aria-label="YourTJ-Hub committers"
+        >
+          <div className="committer-marquee-track flex w-max gap-4 hover:[animation-play-state:paused]">
+            <div className="flex shrink-0 items-center gap-4">
+              {COMMITTERS.map((c) => renderCommitterPill(c, `c1-${c.login}`))}
+            </div>
+            <div className="flex shrink-0 items-center gap-4" aria-hidden="true">
+              {COMMITTERS.map((c) => renderCommitterPill(c, `c2-${c.login}`))}
+            </div>
+          </div>
         </div>
 
         {/* Special With Synergy Showcase: "with" in a delicate ShinyText shimmer, followed by Synergy card */}
