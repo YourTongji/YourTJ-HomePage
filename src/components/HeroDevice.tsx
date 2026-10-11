@@ -7,7 +7,6 @@ import { BottomNav, Fab, ComposeMenu } from '../app-preview/screens/Home';
 import { DEVICE_H, DEVICE_W, SW } from '../app-preview/ui/Phone';
 import { AccountDrawer } from '../app-preview/ui/AccountDrawer';
 import { useFitScale } from '../app-preview/useFitScale';
-import { useI18n } from '../i18n';
 
 gsap.registerPlugin(useGSAP);
 
@@ -15,7 +14,6 @@ const SHELL_SCREENS: AppScreenId[] = ['home', 'campus', 'notifications', 'messag
 const SHELL_FAB_BRANCH = 0;
 
 export const HeroDevice: React.FC = React.memo(() => {
-  const { t } = useI18n();
   const stageHostRef = useRef<HTMLDivElement>(null);
   const scale = useFitScale(stageHostRef, DEVICE_W, DEVICE_H, { max: 0.80, min: 0.35 });
   const tiltRef = useRef<HTMLDivElement>(null);
@@ -29,7 +27,7 @@ export const HeroDevice: React.FC = React.memo(() => {
   return (
     <div
       ref={stageHostRef}
-      className="flex flex-col h-[clamp(470px,66vh,670px)] w-full items-center justify-center gap-4"
+      className="flex h-[clamp(470px,66vh,670px)] w-full items-center justify-center"
       style={{ perspective: 1400 }}
     >
       <div style={{ position: 'relative', width: DEVICE_W * scale, height: DEVICE_H * scale }}>
@@ -81,17 +79,6 @@ export const HeroDevice: React.FC = React.memo(() => {
             />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Simulator interaction hint */}
-      <div className="relative z-20 flex items-center justify-center select-none motion-safe:animate-fade-up [animation-delay:350ms]">
-        <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-medium bg-surface-raised/90 backdrop-blur-md border border-black/10 dark:border-white/10 text-secondary shadow-xs hover:border-black/20 dark:hover:border-white/20 transition-colors">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span>{t('hero.simulatorHint')}</span>
         </div>
       </div>
     </div>
