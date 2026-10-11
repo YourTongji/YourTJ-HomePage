@@ -1076,8 +1076,7 @@ html.dark {
       );
     background-size: 50% 100%, 50% 100%;
     mix-blend-mode: var(--spectrum-phase-blend);
-    animation: spectrum-phase 90s steps(180) infinite;
-    will-change: transform;
+    animation: none;
   }
 
   @keyframes spectrum-phase {

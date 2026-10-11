@@ -100,7 +100,6 @@ export const Hero: React.FC = () => {
   return (
     <section aria-labelledby="hero-title" className="mist-hero relative overflow-hidden">
       <MistBackground />
-      <div aria-hidden="true" className="spectrum-field" />
 
       <div className="relative z-10 mx-auto max-w-page px-4 sm:px-6">
         <div className="short-safe grid min-h-[calc(100dvh-4.25rem)] items-center gap-10 py-8 md:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-14">
