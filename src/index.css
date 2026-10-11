@@ -1063,6 +1063,9 @@ html.dark {
    * underneath keeps shifting the colours as it passes.
    */
   .spectrum-field::after {
+    inset: 0;
+    right: -100%;
+    width: 200%;
     background-image:
       repeating-linear-gradient(
         90deg,
@@ -1083,19 +1086,18 @@ html.dark {
         var(--spectrum-b) 43%,
         var(--spectrum-a) 50%
       );
-    background-size: 200% 100%, 200% 100%;
-    background-position: 50% 50%, 50% 50%;
+    background-size: 50% 100%, 50% 100%;
     mix-blend-mode: var(--spectrum-phase-blend);
     animation: spectrum-phase 90s linear infinite;
-    will-change: background-position;
+    will-change: transform;
   }
 
   @keyframes spectrum-phase {
     from {
-      background-position: 50% 50%, 50% 50%;
+      transform: translate3d(0, 0, 0);
     }
     to {
-      background-position: 350% 50%, 350% 50%;
+      transform: translate3d(-50%, 0, 0);
     }
   }
 

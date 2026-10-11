@@ -669,7 +669,14 @@ export const TechText: React.FC<TechTextProps> = ({
 
       const speedVal = s.speed ?? 1;
       const sweeping = s.sweep && !reducedMotion && !pointer.inside && dragging < 0;
-      if (sweeping) clock += dt * speedVal;
+      if (sweeping) {
+        // Performance optimization: throttle idle ambient sweep to 10 FPS (100ms)
+        if (now - last < 100) {
+          if (visible && alive) raf = requestAnimationFrame(tick);
+          return;
+        }
+        clock += dt * speedVal;
+      }
       pulse += dt;
       let targetX = pointer.x;
       let targetY = pointer.y;

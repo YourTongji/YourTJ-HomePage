@@ -372,9 +372,9 @@ export const SpecularButton: React.FC<SpecularButtonProps> = ({
         // Safe catch on shader execution or context lost
       }
 
-      // Performance optimization: sleep RAF when idle and bright is near 0
-      const needsNext = p.autoAnimate || bright > 0.003 || proximityT > 0.003 || Math.abs(diff) > 0.01;
-      if (needsNext && isIntersecting) {
+      // Performance optimization: sleep RAF when idle and highlight is invisible
+      const isVisible = p.autoAnimate || bright > 0.003 || proximityT > 0.003;
+      if (isVisible && isIntersecting) {
         raf = requestAnimationFrame(update);
       }
     };
