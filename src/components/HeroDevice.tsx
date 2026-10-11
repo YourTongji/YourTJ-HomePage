@@ -24,37 +24,7 @@ export const HeroDevice: React.FC = React.memo(() => {
   const [composeOpen, setComposeOpen] = useState(false);
   const entry = screenById(SHELL_SCREENS[shellIndex]);
 
-  useGSAP(
-    () => {
-      const host = stageHostRef.current;
-      const tiltTarget = tiltRef.current;
-      if (!host || !tiltTarget) return;
 
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const finePointer = window.matchMedia('(pointer: fine)').matches;
-      if (reduceMotion || !finePointer) return;
-
-      const rotateY = gsap.quickTo(tiltTarget, 'rotationY', { duration: 0.7, ease: 'power3.out' });
-      const rotateX = gsap.quickTo(tiltTarget, 'rotationX', { duration: 0.7, ease: 'power3.out' });
-      const onPointerMove = (event: PointerEvent) => {
-        const rect = host.getBoundingClientRect();
-        rotateY(((event.clientX - rect.left) / rect.width - 0.5) * 13);
-        rotateX(((event.clientY - rect.top) / rect.height - 0.5) * -9);
-      };
-      const onPointerLeave = () => {
-        rotateY(0);
-        rotateX(0);
-      };
-
-      host.addEventListener('pointermove', onPointerMove);
-      host.addEventListener('pointerleave', onPointerLeave);
-      return () => {
-        host.removeEventListener('pointermove', onPointerMove);
-        host.removeEventListener('pointerleave', onPointerLeave);
-      };
-    },
-    { dependencies: [scale] },
-  );
 
   return (
     <div

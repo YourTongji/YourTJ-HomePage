@@ -462,35 +462,7 @@ export const AppShowcase: React.FC = () => {
 
       observer.observe(host);
 
-      // Desktop subtle mouse parallax
-      const stage = stageHostRef.current;
-      const tiltTarget = tiltRef.current;
-      if (!isCompact && stage && tiltTarget && window.matchMedia('(pointer: fine)').matches) {
-        const rotateY = gsap.quickTo(tiltTarget, 'rotationY', { duration: 0.8, ease: 'power3.out' });
-        const rotateX = gsap.quickTo(tiltTarget, 'rotationX', { duration: 0.8, ease: 'power3.out' });
-
-        const onPointerMove = (event: PointerEvent) => {
-          const rect = stage.getBoundingClientRect();
-          const horizontal = (event.clientX - rect.left) / rect.width - 0.5;
-          const vertical = (event.clientY - rect.top) / rect.height - 0.5;
-          rotateY(horizontal * 8);
-          rotateX(vertical * -5);
-        };
-
-        const onPointerLeave = () => {
-          rotateY(0);
-          rotateX(0);
-        };
-
-        stage.addEventListener('pointermove', onPointerMove);
-        stage.addEventListener('pointerleave', onPointerLeave);
-        return () => {
-          observer.disconnect();
-          stage.removeEventListener('pointermove', onPointerMove);
-          stage.removeEventListener('pointerleave', onPointerLeave);
-        };
-      }
-
+      // Desktop subtle mouse parallax disabled to prevent any drift on hover
       return () => observer.disconnect();
     },
     { scope: scopeRef, dependencies: [isMobile, isTablet, isCompact, screensNearView] },
@@ -661,7 +633,7 @@ export const AppShowcase: React.FC = () => {
                     type="button"
                     onClick={() => goTo(activeIndex + slot.offset)}
                     aria-label={t('app.showcase.sideAction').replace('{name}', t(entry.labelKey))}
-                    className="group block h-full w-full origin-bottom cursor-pointer text-left transition-transform duration-300 ease-out hover:scale-[1.02] focus-visible:scale-[1.02] active:scale-[0.98]"
+                    className="group block h-full w-full cursor-pointer text-left"
                     style={{ textAlign: 'left' }}
                   >
                     {screensNearView && (
