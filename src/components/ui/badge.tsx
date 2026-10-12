@@ -10,7 +10,7 @@ const badgeVariants = cva('inline-flex items-center', {
       /* Chapter / step numerals. */
       step: 'justify-center rounded-md border border-link/25 bg-link/10 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-link',
       /* Small neutral tag next to a name. */
-      tag: 'rounded-md border border-edge/70 bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-secondary',
+      tag: 'rounded-md border border-border/70 bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground',
     },
   },
   defaultVariants: {

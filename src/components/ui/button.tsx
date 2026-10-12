@@ -11,13 +11,13 @@ const buttonVariants = cva(
         /* Brand-tinted pill: the single primary action in the nav. */
         soft: 'gap-1.5 bg-surface-selected font-semibold text-link transition-[background-color,transform] duration-200 hover:bg-brand/20 active:scale-[0.96] dark:bg-white/5 dark:hover:bg-white/10',
         /* Peer utilities (language, theme): no fill until hovered. */
-        ghost: 'text-primary transition-[background-color,transform] duration-200 hover:bg-surface active:scale-[0.96]',
+        ghost: 'text-foreground transition-[background-color,transform] duration-200 hover:bg-surface active:scale-[0.96]',
         /* Quiet bordered control sitting on a surface. */
         outline:
-          'border border-edge bg-surface text-secondary transition-all duration-200 hover:border-edge-strong hover:text-primary',
+          'border border-input bg-surface text-muted-foreground transition-all duration-200 hover:border-edge-strong hover:text-foreground',
         /* Floating control over imagery: frosted, lifted. */
         glass:
-          'border border-edge/80 bg-surface/85 text-secondary shadow-sm backdrop-blur-md transition-all duration-200 hover:border-edge-strong hover:text-primary active:scale-90',
+          'border border-input/80 bg-surface/85 text-muted-foreground shadow-sm backdrop-blur-md transition-all duration-200 hover:border-edge-strong hover:text-foreground active:scale-90',
       },
       size: {
         default: 'h-11 rounded-full px-4 text-sm sm:h-10 sm:px-5',

@@ -57,11 +57,18 @@ const flowVec = (d?: string): [number, number] => {
  * would show. Between draws the canvas scrolls with the page like any content,
  * and the overscan covers the edge until the next draw catches up.
  *
- * It draws at 30fps (the flow is slow), at up to 1.5x device pixels, without
- * MSAA (a full-screen triangle has no edges to smooth), and stops off screen.
+ * It draws at 30fps (the flow is slow), without MSAA (a full-screen triangle
+ * has no edges to smooth), and stops off screen.
+ *
+ * Resolution: the pattern is very low-frequency - a noise cell spans roughly
+ * 200 CSS pixels and the rims are soft gradients - so one shader pixel per two
+ * CSS pixels, upscaled by the compositor, is indistinguishable from a full-
+ * resolution render, independent of the screen's pixel ratio. That keeps the
+ * per-frame cost of this full-viewport shader small enough for integrated
+ * GPUs on hi-DPI laptop screens, where it was the page's largest cost.
  */
 const FRAME_MS = 1000 / 30;
-const MAX_DPR = 1.5;
+const RENDER_SCALE = 0.5;
 const OVERSCAN = 0.35;
 
 const vertex = `
@@ -269,7 +276,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const container = containerRef.current;
     if (!container || !hasEntered) return;
 
-    const effectiveDpr = dpr ?? (window.innerWidth < 768 ? 1 : Math.min(window.devicePixelRatio || 1, MAX_DPR));
+    const effectiveDpr = dpr ?? RENDER_SCALE;
 
     let renderer: Renderer;
     let gl: any;

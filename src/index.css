@@ -73,6 +73,34 @@
   /* Focus */
   --focus-ring: #078644; /* Brand/700: >= 3:1 against page white */
 
+  /*
+   * shadcn/ui theme contract (see components.json). The primitives in
+   * src/components/ui read these semantic names; each is bound to the design
+   * token that already plays that role, so both schemes follow automatically
+   * and adopting the contract changes no pixel. Channels only, consumed as
+   * rgb(var(--name) / <alpha>) through tailwind.config.cjs.
+   */
+  --background: var(--background-page-rgb);
+  --foreground: var(--text-primary-rgb);
+  --card: var(--background-surface-raised-rgb);
+  --card-foreground: var(--text-primary-rgb);
+  --popover: var(--background-page-rgb);
+  --popover-foreground: var(--text-primary-rgb);
+  --primary: var(--action-primary-rgb);
+  --primary-foreground: var(--text-on-action-rgb);
+  --secondary: var(--background-surface-rgb);
+  --secondary-foreground: var(--text-primary-rgb);
+  --muted: var(--background-surface-subtle-rgb);
+  --muted-foreground: var(--text-secondary-rgb);
+  --accent: var(--background-surface-rgb);
+  --accent-foreground: var(--text-primary-rgb);
+  --destructive: 220 38 38; /* red-600 */
+  --destructive-foreground: 255 255 255;
+  --border: var(--border-default-rgb);
+  --input: var(--border-default-rgb);
+  --ring: 7 134 68; /* = --focus-ring */
+  --radius: 0.5rem;
+
   --nav-highlight: rgba(255 255 255 / 0.65);
   --glass-highlight: rgba(255 255 255 / 0.7);
   --glass-lowlight: rgba(0 0 0 / 0.06);
@@ -156,6 +184,10 @@ html.dark {
   --icon-accent-rgb: 114 240 166;
   /* Focus */
   --focus-ring: #72f0a6; /* Brand/300: high visibility on near-black */
+
+  /* shadcn/ui contract: only the two literal values differ by scheme. */
+  --destructive: 248 113 113; /* red-400 */
+  --ring: 114 240 166; /* = --focus-ring */
 
   --nav-highlight: rgba(255 255 255 / 0.07);
   --glass-highlight: rgba(255 255 255 / 0.12);

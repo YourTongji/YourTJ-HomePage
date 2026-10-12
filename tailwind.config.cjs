@@ -23,6 +23,38 @@ module.exports = {
         'edge-strong': 'rgb(var(--border-hover-rgb) / <alpha-value>)',
         link: 'rgb(var(--text-link-default-rgb) / <alpha-value>)',
         accent: 'rgb(var(--icon-accent-rgb) / <alpha-value>)',
+        /*
+         * shadcn/ui semantic colours (contract defined in src/index.css). The
+         * page's own `primary` / `secondary` / `accent` text tokens above
+         * predate it and keep their names, so shadcn's colours of the same
+         * name are reached through the variables rather than these keys.
+         */
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: {
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
+        },
+        popover: {
+          DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+          foreground: 'rgb(var(--popover-foreground) / <alpha-value>)',
+        },
+        muted: {
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
+        },
+        destructive: {
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+        },
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
+      },
+      borderRadius: {
+        // shadcn/ui radius scale; with --radius at 0.5rem these equal Tailwind's defaults.
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
       },
       fontFamily: {
         brand: ['"Faster One"', 'Inter', 'system-ui', 'sans-serif'],

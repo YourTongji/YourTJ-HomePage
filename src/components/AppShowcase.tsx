@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { AppDevice } from '../app-preview/AppDevice';
 import { APP_SCREENS, APP_SCREEN_COUNT, screenAt } from '../app-preview/screens/registry';
+import { preloadInOrder } from '../utils/lazyWithPreload';
 import { DEVICE_BEZEL, DEVICE_H, DEVICE_RADIUS, DEVICE_W, SW } from '../app-preview/ui/Phone';
 import { useFitScale } from '../app-preview/useFitScale';
 import { useInViewOnce } from '../hooks/useInViewOnce';
@@ -366,12 +367,34 @@ export const AppShowcase: React.FC = () => {
   const stageHostRef = useRef<HTMLDivElement>(null);
   const compactStageRef = useRef<HTMLDivElement>(null);
   const screensNearView = useInViewOnce(isCompact ? compactStageRef : stageHostRef, '100px');
+
+  /*
+   * Screen chunks: the visible screen and its two neighbours load as soon as
+   * the stage approaches the viewport, the rest one by one while the page is
+   * idle. Every later switch re-warms the new neighbours (already-loaded chunks
+   * resolve immediately).
+   */
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (!screensNearView) return;
+    const near = [0, 1, -1].map((offset) => screenAt(activeIndex + offset).preload);
+    preloadInOrder(near, warmedRef.current ? [] : APP_SCREENS.map((screen) => screen.preload));
+    warmedRef.current = true;
+  }, [screensNearView, activeIndex]);
   const scale = useFitScale(stageHostRef, stageWidth, stageHeight, {
     max: 1,
     min: 0.35,
   });
 
   const activeEntry = screenAt(activeIndex);
+  /*
+   * Selection (tabs, dots, counters) follows a tap at once; the device screens
+   * and their captions follow `shownIndex`, which React only advances once the
+   * next screen can render. Until then the current screen stays up, so a
+   * switch never flashes an empty phone while a chunk loads.
+   */
+  const shownIndex = useDeferredValue(activeIndex);
+  const shownEntry = screenAt(shownIndex);
 
   const goTo = useCallback((index: number) => {
     setActiveIndex(((index % APP_SCREEN_COUNT) + APP_SCREEN_COUNT) % APP_SCREEN_COUNT);
@@ -505,10 +528,10 @@ export const AppShowcase: React.FC = () => {
    */
   useEffect(() => {
     const previous = previousIndexRef.current;
-    previousIndexRef.current = activeIndex;
-    if (previous === activeIndex || prefersReducedMotion()) return;
+    previousIndexRef.current = shownIndex;
+    if (previous === shownIndex || prefersReducedMotion()) return;
 
-    const forward = activeIndex === (previous + 1) % APP_SCREEN_COUNT;
+    const forward = shownIndex === (previous + 1) % APP_SCREEN_COUNT;
     const direction = forward ? 1 : -1;
 
     gsap.fromTo(
@@ -532,7 +555,7 @@ export const AppShowcase: React.FC = () => {
         { autoAlpha: 1, x: 0, duration: 0.42, ease: 'power3.out', overwrite: 'auto' },
       );
     }
-  }, [activeIndex]);
+  }, [shownIndex]);
 
   const onTabListKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
@@ -637,7 +660,7 @@ export const AppShowcase: React.FC = () => {
             }}
           />
           {slots.map((slot) => {
-            const entry = screenAt(activeIndex + slot.offset);
+            const entry = screenAt(shownIndex + slot.offset);
             const isActive = slot.role === 'active';
             const bezel = DEVICE_BEZEL * (slot.screenWidth / SW);
             const screenRadius = DEVICE_RADIUS * (slot.screenWidth / SW);
@@ -661,7 +684,7 @@ export const AppShowcase: React.FC = () => {
                 {isSide ? (
                   <button
                     type="button"
-                    onClick={() => goTo(activeIndex + slot.offset)}
+                    onClick={() => goTo(shownIndex + slot.offset)}
                     aria-label={t('app.showcase.sideAction').replace('{name}', t(entry.labelKey))}
                     className="group block h-full w-full origin-bottom cursor-pointer text-left transition-transform duration-300 ease-out hover:scale-[1.02] focus-visible:scale-[1.02] active:scale-[0.98]"
                     style={{ textAlign: 'left' }}
@@ -755,7 +778,7 @@ export const AppShowcase: React.FC = () => {
         ref={isDesktopMode ? captionRef : undefined}
         className="showcase-caption mt-2.5 sm:mt-3 text-xs leading-relaxed text-secondary sm:text-sm"
       >
-        {t(activeEntry.descKey)}
+        {t(shownEntry.descKey)}
       </p>
 
       <div
@@ -945,7 +968,7 @@ export const AppShowcase: React.FC = () => {
                 />
                 {screensNearView && (
                   <AppDevice
-                    entry={activeEntry}
+                    entry={shownEntry}
                     screenWidth={mobileScreenWidth}
                     glare={true}
                     shadow={0.85}
@@ -992,7 +1015,7 @@ export const AppShowcase: React.FC = () => {
 
             {/* Screen Description with GSAP slide */}
             <p className="showcase-caption text-xs leading-relaxed text-secondary min-h-[36px] max-w-xs">
-              {t(activeEntry.descKey)}
+              {t(shownEntry.descKey)}
             </p>
 
             {/* 11 Micro progress dots */}

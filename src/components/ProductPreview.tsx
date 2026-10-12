@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { PREVIEW_SLIDES } from '../constants';
 import { useFitScale } from '../app-preview/useFitScale';
 import { HUB_CANVAS_HEIGHT, HUB_CANVAS_WIDTH } from '../hub-mock/primitives';
-import { hubPreviewPageFor } from '../hub-mock/registry';
+import { hubPreviewPageFor, preloadHubPreviewPage } from '../hub-mock/registry';
+import { preloadInOrder } from '../utils/lazyWithPreload';
 import { prefersReducedMotion, useMediaQuery } from '../hooks/useMediaQuery';
 import { useI18n } from '../i18n';
 import {
@@ -394,7 +395,7 @@ const CourseCompanion: React.FC<{ active?: boolean }> = ({ active = false }) => 
             onClick={toggleReport}
             className={`inline-flex min-w-fit shrink-0 items-center gap-1 sm:gap-1.5 rounded-full border px-2 py-1 text-[11px] sm:text-xs font-medium leading-none transition cursor-pointer ${
               reported
-                ? 'border-red-400/50 bg-red-500/10 text-red-600 dark:text-red-400'
+                ? 'border-red-400/50 bg-red-500/10 text-destructive'
                 : 'border-edge bg-surface text-secondary hover:border-edge-strong hover:text-primary'
             }`}
             title={reported ? '已提交举报' : '举报这条评价'}
@@ -920,11 +921,14 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
                 );
               })
             ) : (
-              <div key={slide?.id || 'default'} data-preview-page>
-                <React.Suspense fallback={null}>
+              // Boundary outside the keyed page: it already shows the current
+              // page, so a deferred switch keeps that page up while the next
+              // one loads instead of falling back to an empty frame.
+              <React.Suspense fallback={null}>
+                <div key={slide?.id || 'default'} data-preview-page>
                   {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
-                </React.Suspense>
-              </div>
+                </div>
+              </React.Suspense>
             )}
           </div>
         </div>
@@ -948,6 +952,30 @@ export const ProductPreview: React.FC = () => {
   const windowDriftRef = useRef<HTMLDivElement>(null);
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  /*
+   * Compact layout: the chapter control and the narrative follow a tap at once,
+   * the live page follows `shownIndex`, which only advances once that page can
+   * render. Pages load ahead of time - the current one and its neighbours as
+   * soon as the section mounts (it is mounted just before it scrolls into
+   * view), the rest while idle - so in practice the switch is immediate; on a
+   * slow connection the old page stays up, dimmed after a short grace period.
+   * The desktop stage mounts all four pages at once and needs none of this.
+   */
+  const shownIndex = useDeferredValue(activeIndex);
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (isDesktop) return;
+    const pageAt = (offset: number) => {
+      const slide = PREVIEW_SLIDES[(activeIndex + offset + PREVIEW_SLIDES.length) % PREVIEW_SLIDES.length];
+      return () => preloadHubPreviewPage(slide.id);
+    };
+    preloadInOrder(
+      [pageAt(0), pageAt(1), pageAt(-1)],
+      warmedRef.current ? [] : PREVIEW_SLIDES.map((slide) => () => preloadHubPreviewPage(slide.id)),
+    );
+    warmedRef.current = true;
+  }, [isDesktop, activeIndex]);
 
   const scrollToChapter = (idx: number) => {
     setActiveIndex(idx);
@@ -1339,8 +1367,11 @@ export const ProductPreview: React.FC = () => {
 
             <TabsContent value={String(activeIndex)} className="flex flex-col gap-6">
               {/* Live Web Preview Window */}
-              <div className="w-full">
-                <PreviewWindow slide={PREVIEW_SLIDES[activeIndex]} index={activeIndex} isDesktop={false} />
+              <div
+                aria-busy={shownIndex !== activeIndex}
+                className={`w-full transition-opacity duration-200 ${shownIndex !== activeIndex ? 'opacity-60 delay-150' : ''}`}
+              >
+                <PreviewWindow slide={PREVIEW_SLIDES[shownIndex]} index={shownIndex} isDesktop={false} />
               </div>
 
               {/* Narrative Card */}

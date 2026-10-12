@@ -44,13 +44,22 @@ const AppDeviceView: React.FC<AppDeviceProps> = ({
     className={className}
     style={style}
   >
-    <div
-      key={entry.id}
-      className={screenClassName}
-      style={{ position: 'absolute', inset: 0 }}
-    >
-      <React.Suspense fallback={null}>{entry.render(renderOptions)}</React.Suspense>
-    </div>
+    {/*
+     * The boundary sits outside the keyed layer on purpose. A boundary created
+     * by the switch itself would have nothing to keep on screen and would show
+     * its empty fallback while the next screen's chunk loads; an existing one
+     * lets a deferred switch (see AppShowcase) keep the current screen visible
+     * until the next one is ready.
+     */}
+    <React.Suspense fallback={null}>
+      <div
+        key={entry.id}
+        className={screenClassName}
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        {entry.render(renderOptions)}
+      </div>
+    </React.Suspense>
     {overlay}
   </DeviceFrame>
 );

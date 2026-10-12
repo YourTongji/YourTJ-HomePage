@@ -35,7 +35,7 @@ const DropdownMenuRadioItem = React.forwardRef<
     className={cn(
       'flex w-full cursor-pointer select-none items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm outline-none transition-colors duration-150',
       'data-[state=checked]:bg-surface-selected data-[state=checked]:text-link',
-      'data-[state=unchecked]:text-primary data-[state=unchecked]:data-[highlighted]:bg-surface',
+      'data-[state=unchecked]:text-popover-foreground data-[state=unchecked]:data-[highlighted]:bg-surface',
       className,
     )}
     {...props}

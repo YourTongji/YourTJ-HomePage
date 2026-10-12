@@ -14,17 +14,18 @@ import {
 } from '../../components/icons';
 import type { Msg } from './Chat';
 import { Composer, QUESTION_BODY, QUESTION_TITLE } from './Composer';
+import { lazyWithPreload } from '../../utils/lazyWithPreload';
 
-const CampusPage = React.lazy(() => import('./Campus').then(({ CampusPage }) => ({ default: CampusPage })));
-const ChatPage = React.lazy(() => import('./Chat').then(({ ChatPage }) => ({ default: ChatPage })));
-const CoursePage = React.lazy(() => import('./Course').then(({ CoursePage }) => ({ default: CoursePage })));
-const HomeFeed = React.lazy(() => import('./Home').then(({ HomeFeed }) => ({ default: HomeFeed })));
-const MessagesPage = React.lazy(() => import('./Messages').then(({ MessagesPage }) => ({ default: MessagesPage })));
-const NotificationsPage = React.lazy(() => import('./Notifications').then(({ NotificationsPage }) => ({ default: NotificationsPage })));
-const ProfilePage = React.lazy(() => import('./Profile').then(({ ProfilePage }) => ({ default: ProfilePage })));
-const ScheduleWidgetsPage = React.lazy(() => import('./ScheduleWidgetsPage').then(({ ScheduleWidgetsPage }) => ({ default: ScheduleWidgetsPage })));
-const TopicPage = React.lazy(() => import('./Topic').then(({ TopicPage }) => ({ default: TopicPage })));
-const WikiHome = React.lazy(() => import('./Wiki').then(({ WikiHome }) => ({ default: WikiHome })));
+const CampusPage = lazyWithPreload(() => import('./Campus').then(({ CampusPage }) => ({ default: CampusPage })));
+const ChatPage = lazyWithPreload(() => import('./Chat').then(({ ChatPage }) => ({ default: ChatPage })));
+const CoursePage = lazyWithPreload(() => import('./Course').then(({ CoursePage }) => ({ default: CoursePage })));
+const HomeFeed = lazyWithPreload(() => import('./Home').then(({ HomeFeed }) => ({ default: HomeFeed })));
+const MessagesPage = lazyWithPreload(() => import('./Messages').then(({ MessagesPage }) => ({ default: MessagesPage })));
+const NotificationsPage = lazyWithPreload(() => import('./Notifications').then(({ NotificationsPage }) => ({ default: NotificationsPage })));
+const ProfilePage = lazyWithPreload(() => import('./Profile').then(({ ProfilePage }) => ({ default: ProfilePage })));
+const ScheduleWidgetsPage = lazyWithPreload(() => import('./ScheduleWidgetsPage').then(({ ScheduleWidgetsPage }) => ({ default: ScheduleWidgetsPage })));
+const TopicPage = lazyWithPreload(() => import('./Topic').then(({ TopicPage }) => ({ default: TopicPage })));
+const WikiHome = lazyWithPreload(() => import('./Wiki').then(({ WikiHome }) => ({ default: WikiHome })));
 
 /*
  * Registry for the app preview.
@@ -85,6 +86,8 @@ export interface AppScreenEntry {
   Icon: React.FC<IconProps>;
   /** Factory, so callers can key the tree and remount it on switch. */
   render: (options?: AppScreenRenderOptions) => React.ReactNode;
+  /** Fetches the screen's code chunk ahead of time; resolves at once for eager screens. */
+  preload: () => Promise<unknown>;
 }
 
 /** Chat thread from the film, with the sticker revealed at a settled angle. */
@@ -103,6 +106,7 @@ const CHAT_SETTLED_AT = 2;
 export const APP_SCREENS: AppScreenEntry[] = [
   {
     id: 'home',
+    preload: HomeFeed.preload,
     labelKey: 'screen.home.label',
     descKey: 'screen.home.desc',
     Icon: HomeScreenIcon,
@@ -110,6 +114,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'course',
+    preload: CoursePage.preload,
     labelKey: 'screen.course.label',
     descKey: 'screen.course.desc',
     Icon: CourseScreenIcon,
@@ -117,6 +122,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'campus',
+    preload: CampusPage.preload,
     labelKey: 'screen.campus.label',
     descKey: 'screen.campus.desc',
     Icon: CampusScreenIcon,
@@ -135,6 +141,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'topic',
+    preload: TopicPage.preload,
     labelKey: 'screen.topic.label',
     descKey: 'screen.topic.desc',
     Icon: ThreadScreenIcon,
@@ -144,6 +151,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'wiki',
+    preload: WikiHome.preload,
     labelKey: 'screen.wiki.label',
     descKey: 'screen.wiki.desc',
     Icon: WikiScreenIcon,
@@ -151,6 +159,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'notifications',
+    preload: NotificationsPage.preload,
     labelKey: 'screen.notifications.label',
     descKey: 'screen.notifications.desc',
     Icon: NotificationScreenIcon,
@@ -158,6 +167,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'messages',
+    preload: MessagesPage.preload,
     labelKey: 'screen.messages.label',
     descKey: 'screen.messages.desc',
     Icon: ChatScreenIcon,
@@ -165,6 +175,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'composer',
+    preload: () => Promise.resolve(),
     labelKey: 'screen.composer.label',
     descKey: 'screen.composer.desc',
     Icon: ComposeScreenIcon,
@@ -180,6 +191,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'chat',
+    preload: ChatPage.preload,
     labelKey: 'screen.chat.label',
     descKey: 'screen.chat.desc',
     Icon: ChatScreenIcon,
@@ -198,6 +210,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'profile',
+    preload: ProfilePage.preload,
     labelKey: 'screen.profile.label',
     descKey: 'screen.profile.desc',
     Icon: ProfileScreenIcon,
@@ -205,6 +218,7 @@ export const APP_SCREENS: AppScreenEntry[] = [
   },
   {
     id: 'widgets',
+    preload: ScheduleWidgetsPage.preload,
     labelKey: 'screen.widgets.label',
     descKey: 'screen.widgets.desc',
     Icon: WidgetsScreenIcon,
