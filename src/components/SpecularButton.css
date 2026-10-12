@@ -1,11 +1,31 @@
+/*
+ * Driven by useSpecular through two registered properties, so the browser
+ * eases angle and brightness between pointer events without a frame loop.
+ */
+@property --sb-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 137deg;
+}
+
+@property --sb-bright {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
 .specular-button {
   --sb-radius: 18px;
   --sb-tint: #ffffff;
   --sb-tint-opacity: 0;
   --sb-blur: 0px;
   --sb-text-color: #f5f5f5;
+  --sb-line-color: #ffffff;
+  --sb-base-color: #525252;
+  --sb-intensity: 1;
 
   position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -26,7 +46,11 @@
   cursor: pointer;
   outline: none;
   text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    --sb-angle 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    --sb-bright 220ms ease-out;
 }
 
 .specular-button:active {
@@ -65,18 +89,53 @@
   padding: 18px 40px;
 }
 
-/* Canvas extends past the button so the rim glow can bleed outside the edge */
-.specular-button__fx {
+/* The highlight: two streaks along the edge, one facing the light and one opposite. */
+.specular-button::before {
+  content: '';
   position: absolute;
-  inset: -20px;
-  pointer-events: none;
+  inset: -1px;
   z-index: 1;
+  padding: 2px;
+  border-radius: calc(var(--sb-radius) + 1px);
+  background: conic-gradient(
+    from var(--sb-angle),
+    color-mix(in srgb, var(--sb-line-color) 68%, transparent) 0deg,
+    color-mix(in srgb, var(--sb-line-color) 50%, transparent) 10deg,
+    color-mix(in srgb, var(--sb-line-color) 16%, transparent) 30deg,
+    transparent 50deg,
+    transparent 130deg,
+    color-mix(in srgb, var(--sb-line-color) 16%, transparent) 150deg,
+    color-mix(in srgb, var(--sb-line-color) 50%, transparent) 170deg,
+    color-mix(in srgb, var(--sb-line-color) 68%, transparent) 180deg,
+    color-mix(in srgb, var(--sb-line-color) 50%, transparent) 190deg,
+    color-mix(in srgb, var(--sb-line-color) 16%, transparent) 210deg,
+    transparent 230deg,
+    transparent 310deg,
+    color-mix(in srgb, var(--sb-line-color) 16%, transparent) 330deg,
+    color-mix(in srgb, var(--sb-line-color) 50%, transparent) 350deg,
+    color-mix(in srgb, var(--sb-line-color) 68%, transparent) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: calc(var(--sb-bright) * var(--sb-intensity));
+  pointer-events: none;
 }
 
-.specular-button__fx canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+/* Dark base stroke hugging the edge, for a sense of glass thickness. */
+.specular-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sb-base-color) 45%, transparent);
+  pointer-events: none;
 }
 
 .specular-button__label {
@@ -103,7 +162,14 @@
     background: color-mix(in srgb, var(--sb-tint) calc(var(--sb-tint-opacity) * 140%), transparent);
   }
 
-  .specular-button__fx {
+  .specular-button::before,
+  .specular-button::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .specular-button::before {
     display: none;
   }
 }

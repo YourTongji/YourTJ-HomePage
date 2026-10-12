@@ -123,43 +123,43 @@ const siteIcon = (ReiconIcon: IconComponent, displayName: string): React.FC<Icon
 };
 
 
-export const SunIcon = siteIcon(ReiconSun, 'SunIcon');
-export const MoonIcon = siteIcon(ReiconMoon, 'MoonIcon');
+export const SunIcon = /* @__PURE__ */ siteIcon(ReiconSun, 'SunIcon');
+export const MoonIcon = /* @__PURE__ */ siteIcon(ReiconMoon, 'MoonIcon');
 
-export const ArrowUpRightIcon = siteIcon(ReiconArrowUpRight, 'ArrowUpRightIcon');
-export const ArrowDownRightIcon = siteIcon(ReiconArrowDownRight, 'ArrowDownRightIcon');
-export const ExternalLinkIcon = siteIcon(ReiconArrowUpRightSquare, 'ExternalLinkIcon');
+export const ArrowUpRightIcon = /* @__PURE__ */ siteIcon(ReiconArrowUpRight, 'ArrowUpRightIcon');
+export const ArrowDownRightIcon = /* @__PURE__ */ siteIcon(ReiconArrowDownRight, 'ArrowDownRightIcon');
+export const ExternalLinkIcon = /* @__PURE__ */ siteIcon(ReiconArrowUpRightSquare, 'ExternalLinkIcon');
 
-export const PhoneIcon = siteIcon(ReiconMobile, 'PhoneIcon');
-export const MailIcon = siteIcon(ReiconEnvelope, 'MailIcon');
+export const PhoneIcon = /* @__PURE__ */ siteIcon(ReiconMobile, 'PhoneIcon');
+export const MailIcon = /* @__PURE__ */ siteIcon(ReiconEnvelope, 'MailIcon');
 
-export const CheckIcon = siteIcon(ReiconCheck, 'CheckIcon');
-export const ClockIcon = siteIcon(ReiconClock, 'ClockIcon');
-export const FlaskIcon = siteIcon(ReiconFlask, 'FlaskIcon');
+export const CheckIcon = /* @__PURE__ */ siteIcon(ReiconCheck, 'CheckIcon');
+export const ClockIcon = /* @__PURE__ */ siteIcon(ReiconClock, 'ClockIcon');
+export const FlaskIcon = /* @__PURE__ */ siteIcon(ReiconFlask, 'FlaskIcon');
 
-export const ChevronLeftIcon = siteIcon(ReiconChevronLeft, 'ChevronLeftIcon');
-export const ChevronRightIcon = siteIcon(ReiconChevronRight, 'ChevronRightIcon');
+export const ChevronLeftIcon = /* @__PURE__ */ siteIcon(ReiconChevronLeft, 'ChevronLeftIcon');
+export const ChevronRightIcon = /* @__PURE__ */ siteIcon(ReiconChevronRight, 'ChevronRightIcon');
 
-export const FeedbackIcon = siteIcon(ReiconChatRoundLine, 'FeedbackIcon');
-export const ReleaseIcon = siteIcon(ReiconDocumentText, 'ReleaseIcon');
-export const LanguageIcon = siteIcon(ReiconLanguage, 'LanguageIcon');
+export const FeedbackIcon = /* @__PURE__ */ siteIcon(ReiconChatRoundLine, 'FeedbackIcon');
+export const ReleaseIcon = /* @__PURE__ */ siteIcon(ReiconDocumentText, 'ReleaseIcon');
+export const LanguageIcon = /* @__PURE__ */ siteIcon(ReiconLanguage, 'LanguageIcon');
 
 /*
  * Icon row for the app screen switcher. One glyph per screen, drawn from the
  * same Reicon set the rest of the page uses, so the switcher reads as part of
  * the site rather than as a second icon language imported from the app build.
  */
-export const HomeScreenIcon = siteIcon(ReiconHome, 'HomeScreenIcon');
-export const ComposeScreenIcon = siteIcon(ReiconPenSquare, 'ComposeScreenIcon');
-export const ThreadScreenIcon = siteIcon(ReiconCommentDots, 'ThreadScreenIcon');
-export const CourseScreenIcon = siteIcon(ReiconGraduationCap, 'CourseScreenIcon');
-export const WikiScreenIcon = siteIcon(ReiconBookOpen, 'WikiScreenIcon');
-export const CampusScreenIcon = siteIcon(ReiconCalendarDays, 'CampusScreenIcon');
-export const ProfileScreenIcon = siteIcon(ReiconUserCircle, 'ProfileScreenIcon');
-export const UserCircleIcon = siteIcon(ReiconUserCircle, 'UserCircleIcon');
-export const ChatScreenIcon = siteIcon(ReiconChatRoundDots, 'ChatScreenIcon');
-export const NotificationScreenIcon = siteIcon(ReiconBell, 'NotificationScreenIcon');
-export const WidgetsScreenIcon = siteIcon(ReiconGrid, 'WidgetsScreenIcon');
+export const HomeScreenIcon = /* @__PURE__ */ siteIcon(ReiconHome, 'HomeScreenIcon');
+export const ComposeScreenIcon = /* @__PURE__ */ siteIcon(ReiconPenSquare, 'ComposeScreenIcon');
+export const ThreadScreenIcon = /* @__PURE__ */ siteIcon(ReiconCommentDots, 'ThreadScreenIcon');
+export const CourseScreenIcon = /* @__PURE__ */ siteIcon(ReiconGraduationCap, 'CourseScreenIcon');
+export const WikiScreenIcon = /* @__PURE__ */ siteIcon(ReiconBookOpen, 'WikiScreenIcon');
+export const CampusScreenIcon = /* @__PURE__ */ siteIcon(ReiconCalendarDays, 'CampusScreenIcon');
+export const ProfileScreenIcon = /* @__PURE__ */ siteIcon(ReiconUserCircle, 'ProfileScreenIcon');
+export const UserCircleIcon = /* @__PURE__ */ siteIcon(ReiconUserCircle, 'UserCircleIcon');
+export const ChatScreenIcon = /* @__PURE__ */ siteIcon(ReiconChatRoundDots, 'ChatScreenIcon');
+export const NotificationScreenIcon = /* @__PURE__ */ siteIcon(ReiconBell, 'NotificationScreenIcon');
+export const WidgetsScreenIcon = /* @__PURE__ */ siteIcon(ReiconGrid, 'WidgetsScreenIcon');
 
 const SolidStarPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
 const SolidHeartPath = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
@@ -206,60 +206,60 @@ const solidOrSiteIcon = (
  * site's icon language instead of shipping a second set. Names stay semantic
  * (BookIcon, not BookOpen) for the same reason as above.
  */
-export const SearchIcon = siteIcon(ReiconSearch, 'SearchIcon');
-export const StarIcon = solidOrSiteIcon(ReiconStar, SolidStarPath, 'StarIcon');
-export const BookmarkIcon = solidOrSiteIcon(ReiconBookmark, SolidBookmarkPath, 'BookmarkIcon');
-export const EyeIcon = siteIcon(ReiconEye, 'EyeIcon');
-export const CommentIcon = siteIcon(ReiconMessageSquare, 'CommentIcon');
-export const GridIcon = siteIcon(ReiconGrid, 'GridIcon');
-export const ListIcon = siteIcon(ReiconList, 'ListIcon');
-export const RefreshIcon = siteIcon(ReiconRefresh, 'RefreshIcon');
-export const LibraryIcon = siteIcon(ReiconLibrary, 'LibraryIcon');
-export const DownloadIcon = siteIcon(ReiconDownload, 'DownloadIcon');
-export const AlertIcon = siteIcon(ReiconAlertCircle, 'AlertIcon');
-export const HistoryIcon = siteIcon(ReiconHistory, 'HistoryIcon');
-export const ShareIcon = siteIcon(ReiconShare, 'ShareIcon');
-export const CompassIcon = siteIcon(ReiconCompass, 'CompassIcon');
-export const BulbIcon = siteIcon(ReiconLightbulb, 'BulbIcon');
-export const UsersIcon = siteIcon(ReiconUsers, 'UsersIcon');
-export const PinIcon = siteIcon(ReiconPin, 'PinIcon');
-export const FilterIcon = siteIcon(ReiconFilter, 'FilterIcon');
-export const SlidersIcon = siteIcon(ReiconSliders, 'SlidersIcon');
-export const CloseIcon = siteIcon(ReiconX, 'CloseIcon');
-export const HouseIcon = siteIcon(ReiconHouse, 'HouseIcon');
-export const FlameIcon = siteIcon(ReiconFlame, 'FlameIcon');
-export const ActivityIcon = siteIcon(ReiconActivity, 'ActivityIcon');
-export const SparklesIcon = siteIcon(ReiconSparkle, 'SparklesIcon');
-export const BookIcon = siteIcon(ReiconBookOpen, 'BookIcon');
-export const CalendarIcon = siteIcon(ReiconCalendar, 'CalendarIcon');
-export const LinkIcon = siteIcon(ReiconLink, 'LinkIcon');
-export const HeartIcon = solidOrSiteIcon(ReiconHeart, SolidHeartPath, 'HeartIcon');
-export const ArrowRightIcon = siteIcon(ReiconArrowRight, 'ArrowRightIcon');
-export const ChevronDownIcon = siteIcon(ReiconChevronDown, 'ChevronDownIcon');
-export const FileTextIcon = siteIcon(ReiconDocumentText, 'FileTextIcon');
-export const PlusIcon = siteIcon(ReiconPlus, 'PlusIcon');
-export const MinusIcon = siteIcon(ReiconMinus, 'MinusIcon');
-export const BellIcon = siteIcon(ReiconBell, 'BellIcon');
-export const HelpIcon = siteIcon(ReiconHelpCircle, 'HelpIcon');
-export const SaveIcon = siteIcon(ReiconSave, 'SaveIcon');
-export const TrashIcon = siteIcon(ReiconTrash2, 'TrashIcon');
-export const ArchiveIcon = siteIcon(ReiconArchive, 'ArchiveIcon');
-export const SettingsIcon = siteIcon(ReiconSettings, 'SettingsIcon');
-export const UserIcon = siteIcon(ReiconUser, 'UserIcon');
-export const WarningIcon = siteIcon(ReiconAlertTriangle, 'WarningIcon');
-export const ThumbsUpIcon = siteIcon(ReiconThumbsUp, 'ThumbsUpIcon');
-export const ThumbsDownIcon = siteIcon(ReiconThumbsDown, 'ThumbsDownIcon');
-export const FlagIcon = siteIcon(ReiconFlag, 'FlagIcon');
+export const SearchIcon = /* @__PURE__ */ siteIcon(ReiconSearch, 'SearchIcon');
+export const StarIcon = /* @__PURE__ */ solidOrSiteIcon(ReiconStar, SolidStarPath, 'StarIcon');
+export const BookmarkIcon = /* @__PURE__ */ solidOrSiteIcon(ReiconBookmark, SolidBookmarkPath, 'BookmarkIcon');
+export const EyeIcon = /* @__PURE__ */ siteIcon(ReiconEye, 'EyeIcon');
+export const CommentIcon = /* @__PURE__ */ siteIcon(ReiconMessageSquare, 'CommentIcon');
+export const GridIcon = /* @__PURE__ */ siteIcon(ReiconGrid, 'GridIcon');
+export const ListIcon = /* @__PURE__ */ siteIcon(ReiconList, 'ListIcon');
+export const RefreshIcon = /* @__PURE__ */ siteIcon(ReiconRefresh, 'RefreshIcon');
+export const LibraryIcon = /* @__PURE__ */ siteIcon(ReiconLibrary, 'LibraryIcon');
+export const DownloadIcon = /* @__PURE__ */ siteIcon(ReiconDownload, 'DownloadIcon');
+export const AlertIcon = /* @__PURE__ */ siteIcon(ReiconAlertCircle, 'AlertIcon');
+export const HistoryIcon = /* @__PURE__ */ siteIcon(ReiconHistory, 'HistoryIcon');
+export const ShareIcon = /* @__PURE__ */ siteIcon(ReiconShare, 'ShareIcon');
+export const CompassIcon = /* @__PURE__ */ siteIcon(ReiconCompass, 'CompassIcon');
+export const BulbIcon = /* @__PURE__ */ siteIcon(ReiconLightbulb, 'BulbIcon');
+export const UsersIcon = /* @__PURE__ */ siteIcon(ReiconUsers, 'UsersIcon');
+export const PinIcon = /* @__PURE__ */ siteIcon(ReiconPin, 'PinIcon');
+export const FilterIcon = /* @__PURE__ */ siteIcon(ReiconFilter, 'FilterIcon');
+export const SlidersIcon = /* @__PURE__ */ siteIcon(ReiconSliders, 'SlidersIcon');
+export const CloseIcon = /* @__PURE__ */ siteIcon(ReiconX, 'CloseIcon');
+export const HouseIcon = /* @__PURE__ */ siteIcon(ReiconHouse, 'HouseIcon');
+export const FlameIcon = /* @__PURE__ */ siteIcon(ReiconFlame, 'FlameIcon');
+export const ActivityIcon = /* @__PURE__ */ siteIcon(ReiconActivity, 'ActivityIcon');
+export const SparklesIcon = /* @__PURE__ */ siteIcon(ReiconSparkle, 'SparklesIcon');
+export const BookIcon = /* @__PURE__ */ siteIcon(ReiconBookOpen, 'BookIcon');
+export const CalendarIcon = /* @__PURE__ */ siteIcon(ReiconCalendar, 'CalendarIcon');
+export const LinkIcon = /* @__PURE__ */ siteIcon(ReiconLink, 'LinkIcon');
+export const HeartIcon = /* @__PURE__ */ solidOrSiteIcon(ReiconHeart, SolidHeartPath, 'HeartIcon');
+export const ArrowRightIcon = /* @__PURE__ */ siteIcon(ReiconArrowRight, 'ArrowRightIcon');
+export const ChevronDownIcon = /* @__PURE__ */ siteIcon(ReiconChevronDown, 'ChevronDownIcon');
+export const FileTextIcon = /* @__PURE__ */ siteIcon(ReiconDocumentText, 'FileTextIcon');
+export const PlusIcon = /* @__PURE__ */ siteIcon(ReiconPlus, 'PlusIcon');
+export const MinusIcon = /* @__PURE__ */ siteIcon(ReiconMinus, 'MinusIcon');
+export const BellIcon = /* @__PURE__ */ siteIcon(ReiconBell, 'BellIcon');
+export const HelpIcon = /* @__PURE__ */ siteIcon(ReiconHelpCircle, 'HelpIcon');
+export const SaveIcon = /* @__PURE__ */ siteIcon(ReiconSave, 'SaveIcon');
+export const TrashIcon = /* @__PURE__ */ siteIcon(ReiconTrash2, 'TrashIcon');
+export const ArchiveIcon = /* @__PURE__ */ siteIcon(ReiconArchive, 'ArchiveIcon');
+export const SettingsIcon = /* @__PURE__ */ siteIcon(ReiconSettings, 'SettingsIcon');
+export const UserIcon = /* @__PURE__ */ siteIcon(ReiconUser, 'UserIcon');
+export const WarningIcon = /* @__PURE__ */ siteIcon(ReiconAlertTriangle, 'WarningIcon');
+export const ThumbsUpIcon = /* @__PURE__ */ siteIcon(ReiconThumbsUp, 'ThumbsUpIcon');
+export const ThumbsDownIcon = /* @__PURE__ */ siteIcon(ReiconThumbsDown, 'ThumbsDownIcon');
+export const FlagIcon = /* @__PURE__ */ siteIcon(ReiconFlag, 'FlagIcon');
 
 /*
  * Schedule-preview glyphs whose product (Lucide) names have no Reicon twin, so
  * the nearest equivalent stands in: Location for MapPin, MoreH for
  * MoreHorizontal, Sledgehammer for Hammer and CalendarEdit for CalendarCog.
  */
-export const MapPinIcon = siteIcon(ReiconLocation, 'MapPinIcon');
-export const MoreIcon = siteIcon(ReiconMoreH, 'MoreIcon');
-export const HammerIcon = siteIcon(ReiconSledgehammer, 'HammerIcon');
-export const CalendarCogIcon = siteIcon(ReiconCalendarEdit, 'CalendarCogIcon');
+export const MapPinIcon = /* @__PURE__ */ siteIcon(ReiconLocation, 'MapPinIcon');
+export const MoreIcon = /* @__PURE__ */ siteIcon(ReiconMoreH, 'MoreIcon');
+export const HammerIcon = /* @__PURE__ */ siteIcon(ReiconSledgehammer, 'HammerIcon');
+export const CalendarCogIcon = /* @__PURE__ */ siteIcon(ReiconCalendarEdit, 'CalendarCogIcon');
 
 /**
  * Official QQ Brand Icon from theSVG (https://thesvg.org/icon/qq)

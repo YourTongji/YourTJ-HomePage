@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { AppDevice } from '../app-preview/AppDevice';
@@ -7,6 +7,7 @@ import { BottomNav, Fab, ComposeMenu } from '../app-preview/screens/Home';
 import { DEVICE_H, DEVICE_W, SW } from '../app-preview/ui/Phone';
 import { AccountDrawer } from '../app-preview/ui/AccountDrawer';
 import { useFitScale } from '../app-preview/useFitScale';
+import { preloadInOrder } from '../utils/lazyWithPreload';
 
 gsap.registerPlugin(useGSAP);
 
@@ -20,7 +21,15 @@ export const HeroDevice: React.FC = React.memo(() => {
   const [shellIndex, setShellIndex] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
-  const entry = screenById(SHELL_SCREENS[shellIndex]);
+  // The nav highlights the tapped tab at once; the screen follows as soon as it
+  // can render, keeping the current one up meanwhile instead of a blank frame.
+  const shownShellIndex = useDeferredValue(shellIndex);
+  const entry = screenById(SHELL_SCREENS[shownShellIndex]);
+
+  // The other shell tabs are one tap away: fetch them while the hero is idle.
+  useEffect(() => {
+    preloadInOrder([], SHELL_SCREENS.map((id) => screenById(id).preload));
+  }, []);
 
   useGSAP(
     () => {
@@ -88,7 +97,7 @@ export const HeroDevice: React.FC = React.memo(() => {
               screenClassName="motion-safe:animate-fade-up"
               overlay={
                 <>
-                  {shellIndex === SHELL_FAB_BRANCH && (
+                  {shownShellIndex === SHELL_FAB_BRANCH && (
                     <>
                       <Fab open={composeOpen ? 1 : 0} onClick={() => setComposeOpen((prev) => !prev)} />
                       <ComposeMenu open={composeOpen} onClose={() => setComposeOpen(false)} />

@@ -47,6 +47,30 @@ const flowVec = (d?: string): [number, number] => {
   }
 };
 
+/*
+ * Cost model. The fluid spans the whole page below the hero, several thousand
+ * pixels tall, but only the part in the viewport is ever seen. So the canvas is
+ * viewport-sized (plus an overscan band above and below) and is moved to the
+ * viewport each time it draws; the shader receives the canvas's offset inside
+ * the full virtual surface and the full surface's resolution, so the pattern,
+ * its scale and its anchoring to the page are exactly what a page-sized canvas
+ * would show. Between draws the canvas scrolls with the page like any content,
+ * and the overscan covers the edge until the next draw catches up.
+ *
+ * It draws at 30fps (the flow is slow), without MSAA (a full-screen triangle
+ * has no edges to smooth), and stops off screen.
+ *
+ * Resolution: the pattern is very low-frequency - a noise cell spans roughly
+ * 200 CSS pixels and the rims are soft gradients - so one shader pixel per two
+ * CSS pixels, upscaled by the compositor, is indistinguishable from a full-
+ * resolution render, independent of the screen's pixel ratio. That keeps the
+ * per-frame cost of this full-viewport shader small enough for integrated
+ * GPUs on hi-DPI laptop screens, where it was the page's largest cost.
+ */
+const FRAME_MS = 1000 / 30;
+const RENDER_SCALE = 0.5;
+const OVERSCAN = 0.35;
+
 const vertex = `
 attribute vec2 position;
 attribute vec2 uv;
@@ -61,6 +85,7 @@ const fragment = `
 precision highp float;
 
 uniform vec3  iResolution;
+uniform vec2  uOffset;
 uniform vec2  iMouse;
 uniform float iTime;
 
@@ -185,7 +210,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 void main() {
   vec4 color;
-  mainImage(color, vUv * iResolution.xy);
+  mainImage(color, gl_FragCoord.xy + uOffset);
   gl_FragColor = color;
 }
 `;
@@ -251,11 +276,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const container = containerRef.current;
     if (!container || !hasEntered) return;
 
-    const effectiveDpr = dpr ?? (
-      typeof window !== 'undefined'
-        ? (window.innerWidth < 768 ? 1 : Math.min(window.devicePixelRatio || 1, 2))
-        : 1
-    );
+    const effectiveDpr = dpr ?? RENDER_SCALE;
 
     let renderer: Renderer;
     let gl: any;
@@ -263,7 +284,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       renderer = new Renderer({
         dpr: effectiveDpr,
         alpha: true,
-        antialias: true,
+        antialias: false,
       });
       rendererRef.current = renderer;
       gl = renderer.gl;
@@ -271,17 +292,20 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     } catch {
       return;
     }
-    const canvas = gl.canvas;
+    const canvas = gl.canvas as HTMLCanvasElement;
     gl.clearColor(0, 0, 0, 0);
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.position = 'absolute';
+    canvas.style.left = '0';
+    canvas.style.top = '0';
     canvas.style.display = 'block';
+    canvas.style.willChange = 'transform';
     container.appendChild(canvas);
 
     const { arr, count, avg } = prepColors(colors);
 
     const uniforms: Record<string, { value: any }> = {
-      iResolution: { value: [gl.drawingBufferWidth, gl.drawingBufferHeight, 1] },
+      iResolution: { value: [1, 1, 1] },
+      uOffset: { value: [0, 0] },
       iMouse: { value: [0, 0] },
       iTime: { value: 0 },
       uColor0: { value: arr[0] },
@@ -318,19 +342,37 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     const mesh = new Mesh(gl, { geometry, program });
     meshRef.current = mesh;
 
+    // Full virtual surface (the container) and the viewport window into it, in CSS px.
+    let surfaceW = 0;
+    let surfaceH = 0;
+    let windowH = 0;
+
     const resize = () => {
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      renderer.setSize(rect.width, rect.height);
-      uniforms.iResolution.value = [gl.drawingBufferWidth, gl.drawingBufferHeight, 1];
+      surfaceW = container.clientWidth;
+      surfaceH = container.clientHeight;
+      if (surfaceW === 0 || surfaceH === 0) return;
+      windowH = Math.min(surfaceH, Math.ceil(window.innerHeight * (1 + OVERSCAN * 2)));
+      renderer.setSize(surfaceW, windowH);
+      const sc = renderer.dpr;
+      uniforms.iResolution.value = [surfaceW * sc, surfaceH * sc, 1];
+    };
+
+    // Moves the canvas over the viewport and tells the shader where it now sits.
+    const place = () => {
+      const top = container.getBoundingClientRect().top;
+      const overscan = (windowH - window.innerHeight) / 2;
+      const y = Math.round(Math.min(Math.max(-top - overscan, 0), Math.max(0, surfaceH - windowH)));
+      canvas.style.transform = `translate3d(0, ${y}px, 0)`;
+      uniforms.uOffset.value = [0, (surfaceH - y - windowH) * renderer.dpr];
     };
 
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(container);
+    window.addEventListener('resize', resize);
 
     const onPointerMove = (e: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       if (
         e.clientY >= rect.top - 150 &&
         e.clientY <= rect.bottom + 150 &&
@@ -352,12 +394,16 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
     }
 
     let isIntersecting = false;
+    let lastDraw = 0;
     const loop = (t: number) => {
       if (!isIntersecting) {
         rafRef.current = null;
         return;
       }
       rafRef.current = requestAnimationFrame(loop);
+      if (t - lastDraw < FRAME_MS - 1) return;
+      lastDraw = t;
+
       uniforms.iTime.value = t * 0.001;
       if (mouseDampening > 0) {
         if (!lastTimeRef.current) lastTimeRef.current = t;
@@ -373,7 +419,8 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       } else {
         lastTimeRef.current = t;
       }
-      if (!paused && programRef.current && meshRef.current) {
+      if (!paused && programRef.current && meshRef.current && windowH > 0) {
+        place();
         try {
           renderer.render({ scene: meshRef.current });
         } catch (e) {
@@ -398,6 +445,7 @@ export const Ferrofluid: React.FC<FerrofluidProps> = ({
       if (mouseInteraction) window.removeEventListener('pointermove', onPointerMove);
       io.disconnect();
       ro.disconnect();
+      window.removeEventListener('resize', resize);
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
       }

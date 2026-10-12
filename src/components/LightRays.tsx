@@ -34,6 +34,16 @@ export interface LightRaysProps {
 
 const DEFAULT_COLOR = '#ffffff';
 
+/*
+ * Cost model. The rays are a soft field with no hard edges, so the canvas
+ * renders at half the (capped) device resolution and the browser upscales it;
+ * the motion is slow, so 30fps reads the same as 60. Off screen the loop is not
+ * throttled but stopped, and the IntersectionObserver restarts it.
+ */
+const RENDER_SCALE = 0.5;
+const FRAME_MS = 1000 / 30;
+const renderDpr = () => Math.max(0.5, Math.min(window.devicePixelRatio || 1, 2) * RENDER_SCALE);
+
 const hexToRgb = (hex: string): [number, number, number] => {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return m
@@ -91,28 +101,6 @@ export const LightRays: React.FC<LightRaysProps> = ({
   const smoothMouseRef = useRef({ x: 0.5, y: 0.5 });
   const meshRef = useRef<Mesh | null>(null);
   const isVisibleRef = useRef<boolean>(true);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        isVisibleRef.current = entry.isIntersecting;
-      },
-      { rootMargin: '250px 0px 250px 0px', threshold: 0 }
-    );
-
-    observerRef.current.observe(containerRef.current);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -122,7 +110,7 @@ export const LightRays: React.FC<LightRaysProps> = ({
     let gl: any;
     try {
       renderer = new Renderer({
-        dpr: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1,
+        dpr: renderDpr(),
         alpha: true,
         premultipliedAlpha: false,
       });
@@ -283,7 +271,7 @@ void main() {
       const updatePlacement = () => {
         if (!containerRef.current || !renderer) return;
 
-        renderer.dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+        renderer.dpr = renderDpr();
 
         const { clientWidth: wCSS, clientHeight: hCSS } = containerRef.current;
         if (wCSS === 0 || hCSS === 0) return;
@@ -301,10 +289,15 @@ void main() {
       };
 
       let animationId: number | null = null;
+      let lastFrame = 0;
       const loop = (t: number) => {
+        animationId = null;
+        if (!isVisibleRef.current) return;
         animationId = requestAnimationFrame(loop);
 
-        if (!isVisibleRef.current) return;
+        const dt = t - lastFrame;
+        if (dt < FRAME_MS - 1) return;
+        lastFrame = t;
 
         if (!rendererRef.current || !uniformsRef.current || !meshRef.current) {
           return;
@@ -313,7 +306,8 @@ void main() {
         uniforms.iTime.value = t * 0.001;
 
         if (followMouse && mouseInfluence > 0.0) {
-          const smoothing = 0.92;
+          // 0.92 per 60fps frame, expressed per elapsed time so the lag is frame-rate independent.
+          const smoothing = Math.pow(0.92, Math.min(dt, 100) / (1000 / 60));
 
           smoothMouseRef.current.x =
             smoothMouseRef.current.x * smoothing + mouseRef.current.x * (1 - smoothing);
@@ -330,11 +324,23 @@ void main() {
         }
       };
 
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          isVisibleRef.current = entry.isIntersecting;
+          if (entry.isIntersecting && animationId === null) {
+            animationId = requestAnimationFrame(loop);
+          }
+        },
+        { rootMargin: '250px 0px 250px 0px', threshold: 0 }
+      );
+
       window.addEventListener('resize', updatePlacement);
       updatePlacement();
+      observer.observe(container);
       animationId = requestAnimationFrame(loop);
 
       return () => {
+        observer.disconnect();
         if (animationId) {
           cancelAnimationFrame(animationId);
         }
@@ -413,7 +419,7 @@ void main() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!containerRef.current || !rendererRef.current) return;
+      if (!isVisibleRef.current || !containerRef.current || !rendererRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;

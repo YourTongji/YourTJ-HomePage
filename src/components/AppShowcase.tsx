@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { AppDevice } from '../app-preview/AppDevice';
 import { APP_SCREENS, APP_SCREEN_COUNT, screenAt } from '../app-preview/screens/registry';
+import { preloadInOrder } from '../utils/lazyWithPreload';
 import { DEVICE_BEZEL, DEVICE_H, DEVICE_RADIUS, DEVICE_W, SW } from '../app-preview/ui/Phone';
 import { useFitScale } from '../app-preview/useFitScale';
 import { useInViewOnce } from '../hooks/useInViewOnce';
@@ -13,6 +14,8 @@ import { useI18n } from '../i18n';
 import { FolderFloat } from './FolderFloat';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { Reveal } from './Reveal';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -364,12 +367,34 @@ export const AppShowcase: React.FC = () => {
   const stageHostRef = useRef<HTMLDivElement>(null);
   const compactStageRef = useRef<HTMLDivElement>(null);
   const screensNearView = useInViewOnce(isCompact ? compactStageRef : stageHostRef, '100px');
+
+  /*
+   * Screen chunks: the visible screen and its two neighbours load as soon as
+   * the stage approaches the viewport, the rest one by one while the page is
+   * idle. Every later switch re-warms the new neighbours (already-loaded chunks
+   * resolve immediately).
+   */
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (!screensNearView) return;
+    const near = [0, 1, -1].map((offset) => screenAt(activeIndex + offset).preload);
+    preloadInOrder(near, warmedRef.current ? [] : APP_SCREENS.map((screen) => screen.preload));
+    warmedRef.current = true;
+  }, [screensNearView, activeIndex]);
   const scale = useFitScale(stageHostRef, stageWidth, stageHeight, {
     max: 1,
     min: 0.35,
   });
 
   const activeEntry = screenAt(activeIndex);
+  /*
+   * Selection (tabs, dots, counters) follows a tap at once; the device screens
+   * and their captions follow `shownIndex`, which React only advances once the
+   * next screen can render. Until then the current screen stays up, so a
+   * switch never flashes an empty phone while a chunk loads.
+   */
+  const shownIndex = useDeferredValue(activeIndex);
+  const shownEntry = screenAt(shownIndex);
 
   const goTo = useCallback((index: number) => {
     setActiveIndex(((index % APP_SCREEN_COUNT) + APP_SCREEN_COUNT) % APP_SCREEN_COUNT);
@@ -503,10 +528,10 @@ export const AppShowcase: React.FC = () => {
    */
   useEffect(() => {
     const previous = previousIndexRef.current;
-    previousIndexRef.current = activeIndex;
-    if (previous === activeIndex || prefersReducedMotion()) return;
+    previousIndexRef.current = shownIndex;
+    if (previous === shownIndex || prefersReducedMotion()) return;
 
-    const forward = activeIndex === (previous + 1) % APP_SCREEN_COUNT;
+    const forward = shownIndex === (previous + 1) % APP_SCREEN_COUNT;
     const direction = forward ? 1 : -1;
 
     gsap.fromTo(
@@ -530,7 +555,7 @@ export const AppShowcase: React.FC = () => {
         { autoAlpha: 1, x: 0, duration: 0.42, ease: 'power3.out', overwrite: 'auto' },
       );
     }
-  }, [activeIndex]);
+  }, [shownIndex]);
 
   const onTabListKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
@@ -635,7 +660,7 @@ export const AppShowcase: React.FC = () => {
             }}
           />
           {slots.map((slot) => {
-            const entry = screenAt(activeIndex + slot.offset);
+            const entry = screenAt(shownIndex + slot.offset);
             const isActive = slot.role === 'active';
             const bezel = DEVICE_BEZEL * (slot.screenWidth / SW);
             const screenRadius = DEVICE_RADIUS * (slot.screenWidth / SW);
@@ -659,7 +684,7 @@ export const AppShowcase: React.FC = () => {
                 {isSide ? (
                   <button
                     type="button"
-                    onClick={() => goTo(activeIndex + slot.offset)}
+                    onClick={() => goTo(shownIndex + slot.offset)}
                     aria-label={t('app.showcase.sideAction').replace('{name}', t(entry.labelKey))}
                     className="group block h-full w-full origin-bottom cursor-pointer text-left transition-transform duration-300 ease-out hover:scale-[1.02] focus-visible:scale-[1.02] active:scale-[0.98]"
                     style={{ textAlign: 'left' }}
@@ -728,22 +753,24 @@ export const AppShowcase: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={() => goTo(activeIndex - 1)}
             aria-label="Previous screen"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-edge bg-surface text-secondary transition-all duration-200 hover:border-edge-strong hover:text-primary active:scale-[0.94] cursor-pointer"
+            className="active:scale-[0.94]"
           >
             <ChevronLeftIcon className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={() => goTo(activeIndex + 1)}
             aria-label="Next screen"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-edge bg-surface text-secondary transition-all duration-200 hover:border-edge-strong hover:text-primary active:scale-[0.94] cursor-pointer"
+            className="active:scale-[0.94]"
           >
             <ChevronRightIcon className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -751,7 +778,7 @@ export const AppShowcase: React.FC = () => {
         ref={isDesktopMode ? captionRef : undefined}
         className="showcase-caption mt-2.5 sm:mt-3 text-xs leading-relaxed text-secondary sm:text-sm"
       >
-        {t(activeEntry.descKey)}
+        {t(shownEntry.descKey)}
       </p>
 
       <div
@@ -825,205 +852,207 @@ export const AppShowcase: React.FC = () => {
     const phoneHeight = (mobileScreenWidth / SW) * DEVICE_H;
 
     return (
-      <div className="flex flex-col items-center w-full max-w-md mx-auto">
-        {/* 1. Header: clean, compact single-line title */}
-        <Reveal>
-          <div className="text-center mb-3 px-1 w-full overflow-hidden">
-            <h2
-              id="app-showcase-title"
-              className="text-[16px] min-[375px]:text-[17.5px] min-[390px]:text-[18.5px] sm:text-2xl font-bold tracking-tight text-primary whitespace-nowrap text-center"
+      <Tabs asChild value={String(activeIndex)} onValueChange={(value) => goTo(Number(value))}>
+        <div className="flex flex-col items-center w-full max-w-md mx-auto">
+          {/* 1. Header: clean, compact single-line title */}
+          <Reveal>
+            <div className="text-center mb-3 px-1 w-full overflow-hidden">
+              <h2
+                id="app-showcase-title"
+                className="text-[16px] min-[375px]:text-[17.5px] min-[390px]:text-[18.5px] sm:text-2xl font-bold tracking-tight text-primary whitespace-nowrap text-center"
+              >
+                {t('app.showcase.title')}
+              </h2>
+            </div>
+          </Reveal>
+
+          {/* 2. Top Scrollable Pill Tab Switcher */}
+          <div className="relative w-full mb-3.5">
+            {/* Subtle edge fades for scroll cue (better-layout Principle 5) */}
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[rgb(var(--background-page-rgb))] to-transparent z-10" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[rgb(var(--background-page-rgb))] to-transparent z-10" />
+
+            <TabsList
+              ref={tabListRef}
+              aria-label="App features"
+              className="items-center gap-1.5 overflow-x-auto no-scrollbar px-6 py-1 scroll-smooth"
             >
-              {t('app.showcase.title')}
-            </h2>
-          </div>
-        </Reveal>
-
-        {/* 2. Top Scrollable Pill Tab Switcher */}
-        <div className="relative w-full mb-3.5">
-          {/* Subtle edge fades for scroll cue (better-layout Principle 5) */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[rgb(var(--background-page-rgb))] to-transparent z-10" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[rgb(var(--background-page-rgb))] to-transparent z-10" />
-
-          <div
-            ref={tabListRef}
-            role="tablist"
-            aria-label="App features"
-            onKeyDown={onTabListKeyDown}
-            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-6 py-1 scroll-smooth"
-          >
-            {APP_SCREENS.map((screen, idx) => {
-              const isActive = idx === activeIndex;
-              const Icon = screen.Icon;
-              const screenTheme = MACARON_THEMES[screen.id] ?? DEFAULT_MACARON;
-              return (
-                <button
-                  key={screen.id}
-                  ref={(el) => {
-                    tabItemRefs.current[idx] = el;
-                  }}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => goTo(idx)}
-                  className={`group flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer shrink-0 ${
-                    isActive
-                      ? 'border shadow-xs'
-                      : 'text-secondary hover:text-primary bg-surface-subtle/70 border border-edge/50 hover:border-edge'
-                  }`}
-                  style={
-                    isActive
-                      ? {
-                          backgroundColor:
-                            theme === 'dark' ? screenTheme.darkBg : screenTheme.lightBg,
-                          borderColor:
-                            theme === 'dark' ? screenTheme.darkBorder : screenTheme.lightBorder,
-                          color:
-                            theme === 'dark' ? screenTheme.darkInk : screenTheme.lightInk,
-                        }
-                      : undefined
-                  }
-                >
-                  <Icon className="h-3.5 w-3.5 stroke-[2] shrink-0" />
-                  <span>{t(screen.labelKey)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3. Centered Phone Mockup with Left & Right Chevrons */}
-        <div className="relative flex items-center justify-center w-full my-1">
-          {/* Left Arrow Button */}
-          <button
-            type="button"
-            onClick={() => goTo(activeIndex - 1)}
-            aria-label="Previous screen"
-            className="absolute left-1 sm:left-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-edge/80 bg-surface/85 text-secondary shadow-sm backdrop-blur-md transition-all duration-200 hover:text-primary hover:border-edge-strong active:scale-90 cursor-pointer"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </button>
-
-          {/* Centered Phone with Touch Swipe */}
-          <div
-            ref={compactStageRef}
-            className="fan-device relative flex items-center justify-center touch-pan-y"
-            onTouchStart={(e) => {
-              pointerStartX.current = e.touches[0].clientX;
-              pointerStartY.current = e.touches[0].clientY;
-            }}
-            onTouchEnd={(e) => {
-              if (pointerStartX.current === null) return;
-              const deltaX = e.changedTouches[0].clientX - pointerStartX.current;
-              const deltaY =
-                e.changedTouches[0].clientY - (pointerStartY.current ?? e.changedTouches[0].clientY);
-              pointerStartX.current = null;
-              pointerStartY.current = null;
-              if (Math.abs(deltaX) >= 36 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
-                goTo(activeIndex + (deltaX < 0 ? 1 : -1));
-              }
-            }}
-            style={{
-              width: phoneWidth,
-              height: phoneHeight,
-              visibility: 'visible',
-            }}
-          >
-            {/* Ambient dynamic glow underneath phone */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[85%] rounded-full blur-2xl opacity-45 -z-10 transition-colors duration-500"
-              style={{
-                backgroundColor: activeTheme.color,
-              }}
-            />
-            {/* Ground shadow ellipse */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 -bottom-2 -translate-x-1/2 w-[80%] h-4 rounded-full blur-md opacity-40 bg-black -z-10"
-            />
-            {screensNearView && (
-              <AppDevice
-                entry={activeEntry}
-                screenWidth={mobileScreenWidth}
-                glare={true}
-                shadow={0.85}
-                screenClassName="fan-screen"
-              />
-            )}
-          </div>
-
-          {/* Right Arrow Button */}
-          <button
-            type="button"
-            onClick={() => goTo(activeIndex + 1)}
-            aria-label="Next screen"
-            className="absolute right-1 sm:right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-edge/80 bg-surface/85 text-secondary shadow-sm backdrop-blur-md transition-all duration-200 hover:text-primary hover:border-edge-strong active:scale-90 cursor-pointer"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* 4. Bottom Information & Micro-indicators */}
-        <div className="mt-3 flex flex-col items-center text-center w-full px-4">
-          {/* Screen Index badge and Label */}
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors duration-300"
-              style={{
-                backgroundColor: theme === 'dark' ? activeTheme.darkBg : activeTheme.lightBg,
-                borderColor: theme === 'dark' ? activeTheme.darkBorder : activeTheme.lightBorder,
-                color: theme === 'dark' ? activeTheme.darkInk : activeTheme.lightInk,
-              }}
-            >
-              {String(activeIndex + 1).padStart(2, '0')}&nbsp;/&nbsp;{String(APP_SCREEN_COUNT).padStart(2, '0')}
-            </span>
-            <span className="font-semibold text-xs sm:text-sm text-primary flex items-center gap-1.5">
-              <activeEntry.Icon
-                className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                style={{ color: activeTheme.color }}
-              />
-              <span>{t(activeEntry.labelKey)}</span>
-            </span>
-          </div>
-
-          {/* Screen Description with GSAP slide */}
-          <p className="showcase-caption text-xs leading-relaxed text-secondary min-h-[36px] max-w-xs">
-            {t(activeEntry.descKey)}
-          </p>
-
-          {/* 11 Micro progress dots */}
-          <div
-            className="mt-1.5 -mx-1 flex h-1.5 items-center justify-between"
-            role="group"
-            aria-label={t('app.showcase.screenSelector')}
-          >
-            {APP_SCREENS.map((screen, idx) => {
-              const isActive = idx === activeIndex;
-              const screenTheme = MACARON_THEMES[screen.id] ?? DEFAULT_MACARON;
-              return (
-                <button
-                  key={screen.id}
-                  type="button"
-                  onClick={() => goTo(idx)}
-                  aria-label={t(screen.labelKey)}
-                  className="relative -my-[9px] grid h-6 w-6 shrink-0 place-items-center cursor-pointer"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`block h-1.5 rounded-full transition-all duration-300 ${
-                      isActive ? 'w-5 shadow-xs' : 'w-1.5 bg-edge/70 hover:bg-edge'
+              {APP_SCREENS.map((screen, idx) => {
+                const isActive = idx === activeIndex;
+                const Icon = screen.Icon;
+                const screenTheme = MACARON_THEMES[screen.id] ?? DEFAULT_MACARON;
+                return (
+                  <TabsTrigger
+                    key={screen.id}
+                    value={String(idx)}
+                    ref={(el) => {
+                      tabItemRefs.current[idx] = el;
+                    }}
+                    className={`group flex gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 shrink-0 ${
+                      isActive
+                        ? 'border shadow-xs'
+                        : 'text-secondary hover:text-primary bg-surface-subtle/70 border border-edge/50 hover:border-edge'
                     }`}
-                    style={isActive ? { backgroundColor: screenTheme.color } : undefined}
-                  />
-                </button>
-              );
-            })}
+                    style={
+                      isActive
+                        ? {
+                            backgroundColor:
+                              theme === 'dark' ? screenTheme.darkBg : screenTheme.lightBg,
+                            borderColor:
+                              theme === 'dark' ? screenTheme.darkBorder : screenTheme.lightBorder,
+                            color:
+                              theme === 'dark' ? screenTheme.darkInk : screenTheme.lightInk,
+                          }
+                        : undefined
+                    }
+                  >
+                    <Icon className="h-3.5 w-3.5 stroke-[2] shrink-0" />
+                    <span>{t(screen.labelKey)}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
           </div>
-        </div>
 
-        <p className="mt-4 text-center text-xs leading-5 text-tertiary">
-          {t('app.showcase.note')}
-        </p>
-      </div>
+          {/* 3. Centered Phone Mockup with Left & Right Chevrons */}
+          <div className="relative flex items-center justify-center w-full my-1">
+            {/* Left Arrow Button */}
+            <Button
+              variant="glass"
+              size="icon-lg"
+              onClick={() => goTo(activeIndex - 1)}
+              aria-label="Previous screen"
+              className="absolute left-1 sm:left-4 z-20"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </Button>
+
+            {/* Centered Phone with Touch Swipe */}
+            <TabsContent asChild value={String(activeIndex)}>
+              <div
+                ref={compactStageRef}
+                className="fan-device relative flex items-center justify-center touch-pan-y"
+                onTouchStart={(e) => {
+                  pointerStartX.current = e.touches[0].clientX;
+                  pointerStartY.current = e.touches[0].clientY;
+                }}
+                onTouchEnd={(e) => {
+                  if (pointerStartX.current === null) return;
+                  const deltaX = e.changedTouches[0].clientX - pointerStartX.current;
+                  const deltaY =
+                    e.changedTouches[0].clientY - (pointerStartY.current ?? e.changedTouches[0].clientY);
+                  pointerStartX.current = null;
+                  pointerStartY.current = null;
+                  if (Math.abs(deltaX) >= 36 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+                    goTo(activeIndex + (deltaX < 0 ? 1 : -1));
+                  }
+                }}
+                style={{
+                  width: phoneWidth,
+                  height: phoneHeight,
+                  visibility: 'visible',
+                }}
+              >
+                {/* Ambient dynamic glow underneath phone */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[85%] rounded-full blur-2xl opacity-45 -z-10 transition-colors duration-500"
+                  style={{
+                    backgroundColor: activeTheme.color,
+                  }}
+                />
+                {/* Ground shadow ellipse */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 -bottom-2 -translate-x-1/2 w-[80%] h-4 rounded-full blur-md opacity-40 bg-black -z-10"
+                />
+                {screensNearView && (
+                  <AppDevice
+                    entry={shownEntry}
+                    screenWidth={mobileScreenWidth}
+                    glare={true}
+                    shadow={0.85}
+                    screenClassName="fan-screen"
+                  />
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Right Arrow Button */}
+            <Button
+              variant="glass"
+              size="icon-lg"
+              onClick={() => goTo(activeIndex + 1)}
+              aria-label="Next screen"
+              className="absolute right-1 sm:right-4 z-20"
+            >
+              <ChevronRightIcon className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* 4. Bottom Information & Micro-indicators */}
+          <div className="mt-3 flex flex-col items-center text-center w-full px-4">
+            {/* Screen Index badge and Label */}
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors duration-300"
+                style={{
+                  backgroundColor: theme === 'dark' ? activeTheme.darkBg : activeTheme.lightBg,
+                  borderColor: theme === 'dark' ? activeTheme.darkBorder : activeTheme.lightBorder,
+                  color: theme === 'dark' ? activeTheme.darkInk : activeTheme.lightInk,
+                }}
+              >
+                {String(activeIndex + 1).padStart(2, '0')}&nbsp;/&nbsp;{String(APP_SCREEN_COUNT).padStart(2, '0')}
+              </span>
+              <span className="font-semibold text-xs sm:text-sm text-primary flex items-center gap-1.5">
+                <activeEntry.Icon
+                  className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                  style={{ color: activeTheme.color }}
+                />
+                <span>{t(activeEntry.labelKey)}</span>
+              </span>
+            </div>
+
+            {/* Screen Description with GSAP slide */}
+            <p className="showcase-caption text-xs leading-relaxed text-secondary min-h-[36px] max-w-xs">
+              {t(shownEntry.descKey)}
+            </p>
+
+            {/* 11 Micro progress dots */}
+            <div
+              className="mt-1.5 -mx-1 flex h-1.5 items-center justify-between"
+              role="group"
+              aria-label={t('app.showcase.screenSelector')}
+            >
+              {APP_SCREENS.map((screen, idx) => {
+                const isActive = idx === activeIndex;
+                const screenTheme = MACARON_THEMES[screen.id] ?? DEFAULT_MACARON;
+                return (
+                  <button
+                    key={screen.id}
+                    type="button"
+                    onClick={() => goTo(idx)}
+                    aria-label={t(screen.labelKey)}
+                    className="relative -my-[9px] grid h-6 w-6 shrink-0 place-items-center cursor-pointer"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`block h-1.5 rounded-full transition-all duration-300 ${
+                        isActive ? 'w-5 shadow-xs' : 'w-1.5 bg-edge/70 hover:bg-edge'
+                      }`}
+                      style={isActive ? { backgroundColor: screenTheme.color } : undefined}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-xs leading-5 text-tertiary">
+            {t('app.showcase.note')}
+          </p>
+        </div>
+      </Tabs>
     );
   };
 

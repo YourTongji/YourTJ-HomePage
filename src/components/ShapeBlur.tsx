@@ -1,17 +1,30 @@
 import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { Mesh, Program, Renderer, Triangle } from 'ogl';
 import { useInViewOnce } from '../hooks/useInViewOnce';
 
-const vertexShader = /* glsl */ `
-varying vec2 v_texcoord;
+/*
+ * Mouse-reactive shape outline (React Bits ShapeBlur), on ogl/WebGL2.
+ *
+ * The picture depends only on the damped pointer position, so a frame is drawn
+ * only while that position is still settling, plus once on resize; an idle page
+ * renders nothing. Colours are uploaded in linear space, as the three.js
+ * original did (three converts hex colours from sRGB and a raw ShaderMaterial
+ * writes them out unconverted), so the plate keeps its shipped tone.
+ */
+
+const vertexShader = /* glsl */ `#version 300 es
+in vec2 position;
 void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    v_texcoord = uv;
+    gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
-const fragmentShader = /* glsl */ `
-varying vec2 v_texcoord;
+const fragmentShader = (variation: number) => /* glsl */ `#version 300 es
+precision highp float;
+
+#define VAR ${variation}
+
+out vec4 fragColor;
 
 uniform vec2 u_mouse;
 uniform vec2 u_resolution;
@@ -123,7 +136,7 @@ void main() {
 
     vec3 color = u_color;
     float alpha = sdf;
-    gl_FragColor = vec4(color.rgb, alpha);
+    fragColor = vec4(color.rgb, clamp(alpha, 0.0, 1.0));
 }
 `;
 
@@ -140,6 +153,17 @@ export interface ShapeBlurProps {
   style?: React.CSSProperties;
 }
 
+const srgbToLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+
+const linearColor = (hex: string): [number, number, number] => {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return [1, 1, 1];
+  return [m[1], m[2], m[3]].map((part) => srgbToLinear(parseInt(part, 16) / 255)) as [number, number, number];
+};
+
+/** Exponential damping toward a target, as THREE.MathUtils.damp. */
+const damp = (x: number, y: number, lambda: number, dt: number) => x + (y - x) * (1 - Math.exp(-lambda * dt));
+
 export const ShapeBlur: React.FC<ShapeBlurProps> = ({
   className = '',
   variation = 0,
@@ -154,157 +178,149 @@ export const ShapeBlur: React.FC<ShapeBlurProps> = ({
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const hasEntered = useInViewOnce(mountRef);
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const programRef = useRef<Program | null>(null);
+  const requestRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount || !hasEntered) return;
 
-    let active = true;
-    let animationFrameId: number;
-    let time = 0;
-    let lastTime = performance.now() * 0.001;
-
-    let w = mount.clientWidth || 1;
-    let h = mount.clientHeight || 1;
-
-    const vMouse = new THREE.Vector2(w * 0.5, h * 0.5);
-    const vMouseDamp = new THREE.Vector2(w * 0.5, h * 0.5);
-    const vResolution = new THREE.Vector2();
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera();
-    camera.position.z = 1;
-
-    let renderer: THREE.WebGLRenderer;
+    let renderer: Renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
-      if (!renderer.domElement) return;
+      renderer = new Renderer({ alpha: true, premultipliedAlpha: false, antialias: false, webgl: 2 });
     } catch {
       return;
     }
-    renderer.setClearColor(0x000000, 0);
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    renderer.domElement.style.display = 'block';
-    mount.appendChild(renderer.domElement);
+    const gl = renderer.gl;
+    if (!gl || !(gl instanceof WebGL2RenderingContext)) return;
 
-    const geo = new THREE.PlaneGeometry(1, 1);
-    const threeColor = new THREE.Color(color);
+    const canvas = gl.canvas as HTMLCanvasElement;
+    gl.clearColor(0, 0, 0, 0);
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    mount.appendChild(canvas);
 
-    const material = new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
+    let w = mount.clientWidth || 1;
+    let h = mount.clientHeight || 1;
+    const mouse = { x: w * 0.5, y: h * 0.5 };
+    const mouseDamp = { x: w * 0.5, y: h * 0.5 };
+
+    const program = new Program(gl, {
+      vertex: vertexShader,
+      fragment: fragmentShader(variation),
       uniforms: {
-        u_mouse: { value: vMouseDamp },
-        u_resolution: { value: vResolution },
+        u_mouse: { value: [mouseDamp.x, mouseDamp.y] },
+        u_resolution: { value: [w, h] },
         u_pixelRatio: { value: pixelRatioProp },
         u_shapeSize: { value: shapeSize },
         u_roundness: { value: roundness },
         u_borderSize: { value: borderSize },
         u_circleSize: { value: circleSize },
         u_circleEdge: { value: circleEdge },
-        u_color: { value: threeColor },
+        u_color: { value: linearColor(color) },
       },
-      defines: { VAR: variation },
-      transparent: true,
     });
-    materialRef.current = material;
+    programRef.current = program;
+    const geometry = new Triangle(gl);
+    const mesh = new Mesh(gl, { geometry, program });
 
-    const quad = new THREE.Mesh(geo, material);
-    scene.add(quad);
+    let visible = false;
+    let frame = 0;
+    let lastTime = 0;
 
-    const onPointerMove = (e: MouseEvent | PointerEvent) => {
-      if (!mount) return;
-      const rect = mount.getBoundingClientRect();
-      vMouse.set(e.clientX - rect.left, e.clientY - rect.top);
+    const draw = () => {
+      program.uniforms.u_mouse.value = [mouseDamp.x, mouseDamp.y];
+      renderer.render({ scene: mesh });
     };
 
-    window.addEventListener('mousemove', onPointerMove, { passive: true });
+    const tick = (now: number) => {
+      frame = 0;
+      if (!visible) return;
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+      mouseDamp.x = damp(mouseDamp.x, mouse.x, 8, dt);
+      mouseDamp.y = damp(mouseDamp.y, mouse.y, 8, dt);
+      const settled = Math.abs(mouse.x - mouseDamp.x) < 0.05 && Math.abs(mouse.y - mouseDamp.y) < 0.05;
+      if (settled) {
+        mouseDamp.x = mouse.x;
+        mouseDamp.y = mouse.y;
+      }
+      draw();
+      if (!settled) frame = requestAnimationFrame(tick);
+    };
+
+    const request = () => {
+      if (!visible || frame) return;
+      lastTime = performance.now();
+      frame = requestAnimationFrame(tick);
+    };
+    requestRef.current = request;
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!visible) return;
+      const rect = mount.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      request();
+    };
     window.addEventListener('pointermove', onPointerMove, { passive: true });
 
     const resize = () => {
-      if (!active || !mount) return;
       w = mount.clientWidth || 1;
       h = mount.clientHeight || 1;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      renderer.setSize(w, h, false);
-      renderer.setPixelRatio(dpr);
-
-      camera.left = -w / 2;
-      camera.right = w / 2;
-      camera.top = h / 2;
-      camera.bottom = -h / 2;
-      camera.updateProjectionMatrix();
-
-      quad.scale.set(w, h, 1);
-      vResolution.set(w, h).multiplyScalar(dpr);
-      material.uniforms.u_pixelRatio.value = dpr;
+      renderer.dpr = dpr;
+      renderer.setSize(w, h);
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      program.uniforms.u_resolution.value = [w * dpr, h * dpr];
+      program.uniforms.u_pixelRatio.value = dpr;
+      if (visible) draw();
     };
-
     resize();
-    window.addEventListener('resize', resize);
 
-    let isIntersecting = false;
-    const io = new IntersectionObserver(([entry]) => {
-      isIntersecting = entry.isIntersecting;
-      if (isIntersecting && active) {
-        lastTime = performance.now() * 0.001;
-        update();
-      }
-    }, { rootMargin: '120px' });
-    io.observe(mount);
-
-    const ro = new ResizeObserver(() => {
-      if (!active) return;
-      resize();
-    });
+    const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    const update = () => {
-      if (!active || !isIntersecting) return;
-      time = performance.now() * 0.001;
-      const dt = Math.min(time - lastTime, 0.1);
-      lastTime = time;
-
-      vMouseDamp.x = THREE.MathUtils.damp(vMouseDamp.x, vMouse.x, 8, dt);
-      vMouseDamp.y = THREE.MathUtils.damp(vMouseDamp.y, vMouse.y, 8, dt);
-
-      renderer.render(scene, camera);
-      animationFrameId = requestAnimationFrame(update);
-    };
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible) {
+          draw();
+          request();
+        }
+      },
+      { rootMargin: '120px' },
+    );
+    io.observe(mount);
 
     return () => {
-      active = false;
-      cancelAnimationFrame(animationFrameId);
+      visible = false;
+      cancelAnimationFrame(frame);
       io.disconnect();
-      window.removeEventListener('resize', resize);
       ro.disconnect();
-      window.removeEventListener('mousemove', onPointerMove);
       window.removeEventListener('pointermove', onPointerMove);
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement);
-      }
-      geo.dispose();
-      material.dispose();
-      materialRef.current = null;
-      renderer.dispose();
-      renderer.forceContextLoss();
+      requestRef.current = () => undefined;
+      programRef.current = null;
+      if (canvas.parentElement === mount) mount.removeChild(canvas);
+      program.remove();
+      geometry.remove();
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [variation, hasEntered]);
 
   useEffect(() => {
-    const mat = materialRef.current;
-    if (!mat) return;
-    mat.uniforms.u_pixelRatio.value = pixelRatioProp;
-    mat.uniforms.u_shapeSize.value = shapeSize;
-    mat.uniforms.u_roundness.value = roundness;
-    mat.uniforms.u_borderSize.value = borderSize;
-    mat.uniforms.u_circleSize.value = circleSize;
-    mat.uniforms.u_circleEdge.value = circleEdge;
-    mat.uniforms.u_color.value.set(color);
-  }, [pixelRatioProp, shapeSize, roundness, borderSize, circleSize, circleEdge, color]);
+    const program = programRef.current;
+    if (!program) return;
+    program.uniforms.u_shapeSize.value = shapeSize;
+    program.uniforms.u_roundness.value = roundness;
+    program.uniforms.u_borderSize.value = borderSize;
+    program.uniforms.u_circleSize.value = circleSize;
+    program.uniforms.u_circleEdge.value = circleEdge;
+    program.uniforms.u_color.value = linearColor(color);
+    requestRef.current();
+  }, [shapeSize, roundness, borderSize, circleSize, circleEdge, color]);
 
   return (
     <div

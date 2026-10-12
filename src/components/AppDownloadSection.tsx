@@ -3,6 +3,7 @@ import { APP_LINKS } from '../constants';
 import { useI18n } from '../i18n';
 import { useTheme } from '../hooks/useTheme';
 import { useInViewOnce } from '../hooks/useInViewOnce';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { assetUrl } from '../utils/assets';
 import {
   AndroidIcon,
@@ -13,6 +14,8 @@ import {
 } from './icons';
 import { Reveal } from './Reveal';
 import { SpecularButton } from './SpecularButton';
+import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 const DeferredQRCode = React.lazy(() =>
   import('qrcode.react').then(({ QRCodeSVG }) => ({ default: QRCodeSVG })),
@@ -32,9 +35,9 @@ interface PlatformActionProps {
 }
 
 /**
- * Platform download action wrapped with WebGL SpecularButton.
- * The specular highlight tracks cursor proximity around the card perimeter.
- * On desktop hover, reveals a sleek vector QR code popover for mobile phone scanning.
+ * Platform download action: a glass card whose specular rim tracks the cursor.
+ * On desktop, hovering or focusing it reveals a QR code for scanning with a
+ * phone. The QR (and its lazy chunk) only mounts while the card is open.
  */
 const PlatformAction: React.FC<PlatformActionProps> = ({
   href,
@@ -46,102 +49,100 @@ const PlatformAction: React.FC<PlatformActionProps> = ({
   platform,
 }) => {
   const { t } = useI18n();
-  const [showQr, setShowQr] = React.useState(false);
+  const qrEnabled = useMediaQuery('(min-width: 768px)');
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <div
-      className="relative group/qr"
-      onMouseEnter={() => setShowQr(true)}
-      onFocusCapture={() => setShowQr(true)}
-    >
-      {/* Specular Action Button */}
-      <SpecularButton
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        size="md"
-        radius={16}
-        tint={theme === 'dark' ? '#202022' : '#ffffff'}
-        tintOpacity={theme === 'dark' ? 0.65 : 0.85}
-        blur={14}
-        baseColor={theme === 'dark' ? '#38383e' : '#e4e4e7'}
-        lineColor={theme === 'dark' ? '#72f0a6' : '#10b981'}
-        textColor={theme === 'dark' ? '#f4f4f5' : '#18181b'}
-        intensity={1.15}
-        proximity={280}
-        className="group !w-full !p-4 !justify-start !text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-      >
-        <div className="flex w-full items-center justify-between gap-3">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105 ${iconBg}`}
-            >
-              {icon}
-            </span>
-            <span className="min-w-0 text-left">
-              <span className="block text-sm sm:text-base font-semibold leading-snug text-primary tracking-tight">
-                {label}
-              </span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-secondary truncate">
-                {channel}
-              </span>
-            </span>
-          </div>
-          <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-tertiary transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
-        </div>
-      </SpecularButton>
-
-      {/* Desktop Hover Floating QR Bubble (hidden on mobile/touch, triggers on hover on desktop) */}
-      <div
-        className="hidden md:block absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-2 scale-95 group-hover/qr:pointer-events-auto group-hover/qr:opacity-100 group-hover/qr:translate-y-0 group-hover/qr:scale-100 group-focus-within/qr:pointer-events-auto group-focus-within/qr:opacity-100 group-focus-within/qr:translate-y-0 group-focus-within/qr:scale-100 transition-[opacity,transform] duration-200 ease-out will-change-[transform,opacity]"
-        role="tooltip"
-        aria-hidden="true"
-      >
-        <div className="w-[164px] rounded-2xl border border-edge/90 bg-surface-raised/95 backdrop-blur-xl p-2.5 pb-2 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_40px_-6px_rgba(0,0,0,0.7),0_4px_14px_-2px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 flex flex-col items-center relative">
-          {/* QR Code Container with subtle inset border */}
-          <div className="relative p-1.5 rounded-xl bg-white dark:bg-zinc-950 border border-edge/70 shadow-2xs flex items-center justify-center">
-            {showQr && (
-              <React.Suspense fallback={null}>
-                <DeferredQRCode
-                  value={href}
-                  size={120}
-                  level="H"
-                  bgColor="transparent"
-                  fgColor={theme === 'dark' ? '#f4f4f5' : '#09090b'}
-                  marginSize={1}
-                  imageSettings={{
-                    src: '',
-                    height: 26,
-                    width: 26,
-                    excavate: true,
-                  }}
-                />
-              </React.Suspense>
-            )}
-            {/* Center System Icon Badge */}
-            <div className="absolute inset-0 m-auto h-6 w-6 rounded-md bg-surface-raised border border-edge/80 shadow-2xs flex items-center justify-center pointer-events-none">
-              {platform === 'ios' ? (
-                <AppleIcon theme={theme} className="h-3.5 w-3.5" />
-              ) : (
-                <AndroidIcon theme={theme} className="h-3.5 w-3.5 text-emerald-500" />
-              )}
+    <HoverCard open={qrEnabled && open} onOpenChange={setOpen} openDelay={0} closeDelay={80}>
+      <HoverCardTrigger asChild>
+        <div className="relative">
+          <SpecularButton
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="md"
+            radius={16}
+            tint={theme === 'dark' ? '#202022' : '#ffffff'}
+            tintOpacity={theme === 'dark' ? 0.65 : 0.85}
+            blur={14}
+            baseColor={theme === 'dark' ? '#38383e' : '#e4e4e7'}
+            lineColor={theme === 'dark' ? '#72f0a6' : '#10b981'}
+            textColor={theme === 'dark' ? '#f4f4f5' : '#18181b'}
+            intensity={1.15}
+            proximity={280}
+            className="group !w-full !p-4 !justify-start !text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105 ${iconBg}`}
+                >
+                  {icon}
+                </span>
+                <span className="min-w-0 text-left">
+                  <span className="block text-sm sm:text-base font-semibold leading-snug text-primary tracking-tight">
+                    {label}
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-secondary truncate">
+                    {channel}
+                  </span>
+                </span>
+              </div>
+              <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-tertiary transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
             </div>
-          </div>
-
-          {/* Tooltip Copy - Clean tip text without redundant platform label */}
-          <div className="mt-2 text-center px-1">
-            <p className="text-[11px] font-medium leading-snug text-secondary select-none">
-              {t('app.download.qrTip')}
-            </p>
-          </div>
-
-          {/* Notch / Arrow pointing to button */}
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-2.5 w-2.5 rotate-45 border-r border-b border-edge/90 bg-surface-raised" />
+          </SpecularButton>
         </div>
-      </div>
-    </div>
+      </HoverCardTrigger>
+
+      <HoverCardContent
+        side="top"
+        aria-hidden="true"
+        className="w-[164px] rounded-2xl border border-edge/90 bg-surface-raised/95 backdrop-blur-xl p-2.5 pb-2 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_40px_-6px_rgba(0,0,0,0.7),0_4px_14px_-2px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 flex flex-col items-center relative"
+      >
+        {/* QR Code Container with subtle inset border */}
+        <div className="relative p-1.5 rounded-xl bg-white dark:bg-zinc-950 border border-edge/70 shadow-2xs flex items-center justify-center">
+          <React.Suspense fallback={<div className="h-[120px] w-[120px]" />}>
+            <DeferredQRCode
+              value={href}
+              size={120}
+              level="H"
+              bgColor="transparent"
+              fgColor={theme === 'dark' ? '#f4f4f5' : '#09090b'}
+              marginSize={1}
+              imageSettings={{
+                src: '',
+                height: 26,
+                width: 26,
+                excavate: true,
+              }}
+            />
+          </React.Suspense>
+          {/* Center System Icon Badge */}
+          <div className="absolute inset-0 m-auto h-6 w-6 rounded-md bg-surface-raised border border-edge/80 shadow-2xs flex items-center justify-center pointer-events-none">
+            {platform === 'ios' ? (
+              <AppleIcon theme={theme} className="h-3.5 w-3.5" />
+            ) : (
+              <AndroidIcon theme={theme} className="h-3.5 w-3.5 text-emerald-500" />
+            )}
+          </div>
+        </div>
+
+        {/* Tooltip Copy - Clean tip text without redundant platform label */}
+        <div className="mt-2 text-center px-1">
+          <p className="text-[11px] font-medium leading-snug text-secondary select-none">
+            {t('app.download.qrTip')}
+          </p>
+        </div>
+
+        {/* Notch / Arrow pointing to button */}
+        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-2.5 w-2.5 rotate-45 border-r border-b border-edge/90 bg-surface-raised" />
+      </HoverCardContent>
+    </HoverCard>
   );
 };
+
+const SECONDARY_LINK_CLASS =
+  'whitespace-normal border-edge/80 bg-surface/60 hover:bg-surface-raised active:scale-[0.98]';
 
 const ANDROID_PROBE_URL =
   'https://github.com/YourTongji/YourTJ-Hub/releases/download/mobile-latest/YourTJ-download-probe.png';
@@ -317,24 +318,18 @@ export const AppDownloadSection: React.FC = () => {
 
                 {/* Secondary Actions */}
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <a
-                    href={APP_LINKS.androidReleases}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-edge/80 bg-surface/60 px-3.5 py-2 text-xs font-medium text-secondary transition-all duration-200 hover:border-edge-strong hover:bg-surface-raised hover:text-primary active:scale-[0.98]"
-                  >
-                    <ReleaseIcon className="h-3.5 w-3.5 text-tertiary" />
-                    <span>{t('app.more')}</span>
-                  </a>
-                  <a
-                    href={APP_LINKS.iosIssues}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-edge/80 bg-surface/60 px-3.5 py-2 text-xs font-medium text-secondary transition-all duration-200 hover:border-edge-strong hover:bg-surface-raised hover:text-primary active:scale-[0.98]"
-                  >
-                    <FeedbackIcon className="h-3.5 w-3.5 text-tertiary" />
-                    <span>{t('app.feedback')}</span>
-                  </a>
+                  <Button asChild variant="outline" size="sm" className={SECONDARY_LINK_CLASS}>
+                    <a href={APP_LINKS.androidReleases} target="_blank" rel="noopener noreferrer">
+                      <ReleaseIcon className="h-3.5 w-3.5 text-tertiary" />
+                      <span>{t('app.more')}</span>
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className={SECONDARY_LINK_CLASS}>
+                    <a href={APP_LINKS.iosIssues} target="_blank" rel="noopener noreferrer">
+                      <FeedbackIcon className="h-3.5 w-3.5 text-tertiary" />
+                      <span>{t('app.feedback')}</span>
+                    </a>
+                  </Button>
                 </div>
               </div>
 

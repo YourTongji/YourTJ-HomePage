@@ -98,8 +98,18 @@ const useImageLoader = (
   }, [onLoad, seqRef, ...dependencies]);
 };
 
-const useAnimationLoop = (
+/*
+ * The marquee is a Web Animation, so the compositor moves the track and the
+ * main thread is idle while it scrolls. One linear pass covers exactly one
+ * sequence length and repeats forever; the duplicated copies hide the seam.
+ *
+ * Hover speed is a playbackRate eased with the same exponential response the
+ * old per-frame loop used (tau = SMOOTH_TAU). That short rAF exists only while
+ * the rate is still settling. Off screen the animation is paused outright.
+ */
+const useMarquee = (
   trackRef: React.RefObject<HTMLElement | null>,
+  containerRef: React.RefObject<HTMLElement | null>,
   targetVelocity: number,
   seqWidth: number,
   seqHeight: number,
@@ -107,62 +117,77 @@ const useAnimationLoop = (
   hoverSpeed: number | undefined,
   isVertical: boolean
 ) => {
-  const rafRef = useRef<number | null>(null);
-  const lastTimestampRef = useRef<number | null>(null);
-  const offsetRef = useRef(0);
-  const velocityRef = useRef(0);
+  const animationRef = useRef<Animation | null>(null);
+  const rateRef = useRef(1);
+  const goalRef = useRef(1);
+  const easeFrameRef = useRef(0);
+  const seqSize = isVertical ? seqHeight : seqWidth;
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return;
+    const container = containerRef.current;
+    if (!track || !container || seqSize <= 0 || targetVelocity === 0) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const seqSize = isVertical ? seqHeight : seqWidth;
+    const at = (px: number) => (isVertical ? `translate3d(0, ${px}px, 0)` : `translate3d(${px}px, 0, 0)`);
+    const keyframes =
+      targetVelocity > 0
+        ? [{ transform: at(0) }, { transform: at(-seqSize) }]
+        : [{ transform: at(-seqSize) }, { transform: at(0) }];
 
-    if (seqSize > 0) {
-      offsetRef.current = ((offsetRef.current % seqSize) + seqSize) % seqSize;
-      const transformValue = isVertical
-        ? `translate3d(0, ${-offsetRef.current}px, 0)`
-        : `translate3d(${-offsetRef.current}px, 0, 0)`;
-      track.style.transform = transformValue;
-    }
+    // Carry the phase across rebuilds (resize, new sequence width) so nothing jumps.
+    const previous = animationRef.current;
+    const phase = previous?.effect?.getComputedTiming().progress ?? 0;
+    previous?.cancel();
 
-    const animate = (timestamp: number) => {
-      if (lastTimestampRef.current === null) {
-        lastTimestampRef.current = timestamp;
-      }
+    const duration = (seqSize / Math.abs(targetVelocity)) * 1000;
+    const animation = track.animate(keyframes, { duration, iterations: Infinity, easing: 'linear' });
+    animation.currentTime = phase * duration;
+    animation.playbackRate = rateRef.current;
+    animationRef.current = animation;
 
-      const deltaTime = Math.max(0, timestamp - lastTimestampRef.current) / 1000;
-      lastTimestampRef.current = timestamp;
-
-      const target = isHovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity;
-
-      const easingFactor = 1 - Math.exp(-deltaTime / ANIMATION_CONFIG.SMOOTH_TAU);
-      velocityRef.current += (target - velocityRef.current) * easingFactor;
-
-      if (seqSize > 0) {
-        let nextOffset = offsetRef.current + velocityRef.current * deltaTime;
-        nextOffset = ((nextOffset % seqSize) + seqSize) % seqSize;
-        offsetRef.current = nextOffset;
-
-        const transformValue = isVertical
-          ? `translate3d(0, ${-offsetRef.current}px, 0)`
-          : `translate3d(${-offsetRef.current}px, 0, 0)`;
-        track.style.transform = transformValue;
-      }
-
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) animation.play();
+      else animation.pause();
+    });
+    observer.observe(container);
 
     return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      lastTimestampRef.current = null;
+      observer.disconnect();
+      cancelAnimationFrame(easeFrameRef.current);
+      easeFrameRef.current = 0;
     };
-  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, trackRef]);
+  }, [trackRef, containerRef, seqSize, targetVelocity, isVertical]);
+
+  useEffect(
+    () => () => {
+      animationRef.current?.cancel();
+      animationRef.current = null;
+    },
+    []
+  );
+
+  useEffect(() => {
+    goalRef.current =
+      isHovered && hoverSpeed !== undefined && targetVelocity !== 0 ? hoverSpeed / targetVelocity : 1;
+    if (easeFrameRef.current) return;
+
+    let last = performance.now();
+    const step = (now: number) => {
+      const animation = animationRef.current;
+      const dt = Math.max(0, now - last) / 1000;
+      last = now;
+      const goal = goalRef.current;
+      let rate = rateRef.current + (goal - rateRef.current) * (1 - Math.exp(-dt / ANIMATION_CONFIG.SMOOTH_TAU));
+      if (Math.abs(goal - rate) < 0.002) rate = goal;
+      rateRef.current = rate;
+      if (animation) animation.playbackRate = rate;
+      easeFrameRef.current = rate === goal ? 0 : requestAnimationFrame(step);
+    };
+    easeFrameRef.current = requestAnimationFrame(step);
+  }, [isHovered, hoverSpeed, targetVelocity]);
+
+  useEffect(() => () => cancelAnimationFrame(easeFrameRef.current), []);
 };
 
 export const LogoLoop: React.FC<LogoLoopProps> = memo(
@@ -249,8 +274,9 @@ export const LogoLoop: React.FC<LogoLoopProps> = memo(
 
     useImageLoader(seqRef, updateDimensions, [logos, gap, logoHeight, isVertical]);
 
-    useAnimationLoop(
+    useMarquee(
       trackRef,
+      containerRef,
       targetVelocity,
       seqWidth,
       seqHeight,

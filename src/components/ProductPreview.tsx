@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { PREVIEW_SLIDES } from '../constants';
 import { useFitScale } from '../app-preview/useFitScale';
 import { HUB_CANVAS_HEIGHT, HUB_CANVAS_WIDTH } from '../hub-mock/primitives';
-import { hubPreviewPageFor } from '../hub-mock/registry';
+import { hubPreviewPageFor, preloadHubPreviewPage } from '../hub-mock/registry';
+import { preloadInOrder } from '../utils/lazyWithPreload';
 import { prefersReducedMotion, useMediaQuery } from '../hooks/useMediaQuery';
 import { useI18n } from '../i18n';
 import {
@@ -21,6 +22,8 @@ import {
 import { Avatar } from '../app-preview/ui/primitives';
 import { LineSidebar } from './LineSidebar';
 import PeekRating from './PeekRating';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MessageSquare,
   Eye,
@@ -222,19 +225,8 @@ const CourseCompanion: React.FC<{ active?: boolean }> = ({ active = false }) => 
   const [disliked, setDisliked] = useState(false);
   const [dislikeCount, setDislikeCount] = useState(0);
   const [reported, setReported] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 639px)');
   const timerRef = useRef<number[]>([]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      if (typeof window !== 'undefined') {
-        setIsMobile(window.innerWidth < 640);
-      }
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     timerRef.current.forEach((t) => window.clearTimeout(t));
@@ -403,7 +395,7 @@ const CourseCompanion: React.FC<{ active?: boolean }> = ({ active = false }) => 
             onClick={toggleReport}
             className={`inline-flex min-w-fit shrink-0 items-center gap-1 sm:gap-1.5 rounded-full border px-2 py-1 text-[11px] sm:text-xs font-medium leading-none transition cursor-pointer ${
               reported
-                ? 'border-red-400/50 bg-red-500/10 text-red-600 dark:text-red-400'
+                ? 'border-red-400/50 bg-red-500/10 text-destructive'
                 : 'border-edge bg-surface text-secondary hover:border-edge-strong hover:text-primary'
             }`}
             title={reported ? '已提交举报' : '举报这条评价'}
@@ -434,10 +426,14 @@ const CourseCompanion: React.FC<{ active?: boolean }> = ({ active = false }) => 
  */
 const ScheduleCompanion: React.FC = () => {
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef(0);
+
+  useEffect(() => () => window.clearTimeout(copyTimerRef.current), []);
 
   const handleCopy = () => {
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    window.clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -899,7 +895,13 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
               transform: `scale(${scale})`,
             }}
           >
-            <React.Suspense fallback={null}>{isDesktop ? (
+            {/*
+             * One Suspense boundary per slide. With a single boundary around all
+             * four, the first lazy page to suspend unmounted the slide layers the
+             * scroll timeline had already captured, and the pinned stage then
+             * animated detached nodes (adopted from upstream PR #1).
+             */}
+            {isDesktop ? (
               PREVIEW_SLIDES.map((s, i) => {
                 const PageComp = hubPreviewPageFor(s.id);
                 return (
@@ -912,22 +914,31 @@ const PreviewWindow: React.FC<PreviewWindowProps> = React.memo(({
                       visibility: i === 0 ? 'inherit' : 'hidden',
                     }}
                   >
-                    <PageComp />
+                    <React.Suspense fallback={null}>
+                      <PageComp />
+                    </React.Suspense>
                   </div>
                 );
               })
             ) : (
-              <div key={slide?.id || 'default'} data-preview-page>
-                {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
-              </div>
+              // Boundary outside the keyed page: it already shows the current
+              // page, so a deferred switch keeps that page up while the next
+              // one loads instead of falling back to an empty frame.
+              <React.Suspense fallback={null}>
+                <div key={slide?.id || 'default'} data-preview-page>
+                  {React.createElement(hubPreviewPageFor(slide?.id || 'hub-home'))}
+                </div>
+              </React.Suspense>
             )}
-            </React.Suspense>
           </div>
         </div>
       </div>
     </div>
   );
 });
+
+/** Short chapter names for the compact segmented control. */
+const COMPACT_TAB_NAMES = ['论坛', '选课', '课表', '百科'];
 
 export const ProductPreview: React.FC = () => {
   const { t } = useI18n();
@@ -941,6 +952,30 @@ export const ProductPreview: React.FC = () => {
   const windowDriftRef = useRef<HTMLDivElement>(null);
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  /*
+   * Compact layout: the chapter control and the narrative follow a tap at once,
+   * the live page follows `shownIndex`, which only advances once that page can
+   * render. Pages load ahead of time - the current one and its neighbours as
+   * soon as the section mounts (it is mounted just before it scrolls into
+   * view), the rest while idle - so in practice the switch is immediate; on a
+   * slow connection the old page stays up, dimmed after a short grace period.
+   * The desktop stage mounts all four pages at once and needs none of this.
+   */
+  const shownIndex = useDeferredValue(activeIndex);
+  const warmedRef = useRef(false);
+  useEffect(() => {
+    if (isDesktop) return;
+    const pageAt = (offset: number) => {
+      const slide = PREVIEW_SLIDES[(activeIndex + offset + PREVIEW_SLIDES.length) % PREVIEW_SLIDES.length];
+      return () => preloadHubPreviewPage(slide.id);
+    };
+    preloadInOrder(
+      [pageAt(0), pageAt(1), pageAt(-1)],
+      warmedRef.current ? [] : PREVIEW_SLIDES.map((slide) => () => preloadHubPreviewPage(slide.id)),
+    );
+    warmedRef.current = true;
+  }, [isDesktop, activeIndex]);
 
   const scrollToChapter = (idx: number) => {
     setActiveIndex(idx);
@@ -1215,9 +1250,9 @@ export const ProductPreview: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center justify-center rounded-md border border-link/25 bg-link/10 px-2 py-0.5 font-mono text-xs font-semibold text-link tracking-wide">
+                          <Badge variant="step">
                             {step.num}
-                          </span>
+                          </Badge>
                           <span className="text-sm font-semibold tracking-tight text-primary">
                             {step.label}
                           </span>
@@ -1306,71 +1341,74 @@ export const ProductPreview: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
+          <Tabs
+            value={String(activeIndex)}
+            onValueChange={(value) => setActiveIndex(Number(value))}
+            className="flex flex-col gap-6"
+          >
             {/* Mobile Segmented Chapter Control */}
-            <div className="grid grid-cols-4 gap-1.5 rounded-xl bg-surface-subtle/80 p-1 border border-edge/70 shadow-2xs backdrop-blur-sm">
+            <TabsList className="grid grid-cols-4 gap-1.5 rounded-xl bg-surface-subtle/80 p-1 border border-edge/70 shadow-2xs backdrop-blur-sm">
               {STEPS.map((step, idx) => {
                 const isActive = activeIndex === idx;
-                const tabNames = ['论坛', '选课', '课表', '百科'];
                 return (
-                  <button
+                  <TabsTrigger
                     key={step.id}
-                    type="button"
-                    onClick={() => setActiveIndex(idx)}
-                    className={`flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer min-h-[40px] select-none ${
-                      isActive
-                        ? 'bg-surface-raised text-primary shadow-xs font-semibold border border-edge/80'
-                        : 'text-secondary hover:text-primary hover:bg-surface/40'
-                    }`}
+                    value={String(idx)}
+                    className="flex gap-1.5 whitespace-normal py-2 px-1 rounded-lg text-xs font-medium transition-all duration-200 min-h-[40px] text-secondary hover:text-primary hover:bg-surface/40 data-[state=active]:bg-surface-raised data-[state=active]:text-primary data-[state=active]:shadow-xs data-[state=active]:font-semibold data-[state=active]:border data-[state=active]:border-edge/80 data-[state=active]:hover:bg-surface-raised"
                   >
                     <span className={`font-mono text-[10px] tabular-nums ${isActive ? 'text-link font-bold' : 'text-tertiary'}`}>
                       {step.num}
                     </span>
-                    <span className="truncate">{tabNames[idx]}</span>
-                  </button>
+                    <span className="truncate">{COMPACT_TAB_NAMES[idx]}</span>
+                  </TabsTrigger>
                 );
               })}
-            </div>
+            </TabsList>
 
-            {/* Live Web Preview Window */}
-            <div className="w-full">
-              <PreviewWindow slide={PREVIEW_SLIDES[activeIndex]} index={activeIndex} isDesktop={false} />
-            </div>
+            <TabsContent value={String(activeIndex)} className="flex flex-col gap-6">
+              {/* Live Web Preview Window */}
+              <div
+                aria-busy={shownIndex !== activeIndex}
+                className={`w-full transition-opacity duration-200 ${shownIndex !== activeIndex ? 'opacity-60 delay-150' : ''}`}
+              >
+                <PreviewWindow slide={PREVIEW_SLIDES[shownIndex]} index={shownIndex} isDesktop={false} />
+              </div>
 
-            {/* Narrative Card */}
-            <div className="rounded-2xl border border-edge/50 bg-surface-subtle/60 p-4 sm:p-5 shadow-xs backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center rounded-md border border-link/25 bg-link/10 px-2 py-0.5 font-mono text-xs font-semibold text-link tracking-wide">
-                    {STEPS[activeIndex].num}
-                  </span>
-                  <span className="text-xs font-semibold tracking-tight text-primary">
-                    {STEPS[activeIndex].label}
-                  </span>
+              {/* Narrative Card */}
+              <div className="rounded-2xl border border-edge/50 bg-surface-subtle/60 p-4 sm:p-5 shadow-xs backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="step">
+                      {STEPS[activeIndex].num}
+                    </Badge>
+                    <span className="text-xs font-semibold tracking-tight text-primary">
+                      {STEPS[activeIndex].label}
+                    </span>
+                  </div>
+                  <a
+                    href={PREVIEW_SLIDES[activeIndex].href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/link inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-link transition-colors"
+                  >
+                    <span>{t('preview.visit')}</span>
+                    <ArrowUpRightIcon className="h-3.5 w-3.5 text-secondary group-hover/link:text-link transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                  </a>
                 </div>
-                <a
-                  href={PREVIEW_SLIDES[activeIndex].href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/link inline-flex items-center gap-1 text-xs font-medium text-secondary hover:text-link transition-colors"
-                >
-                  <span>{t('preview.visit')}</span>
-                  <ArrowUpRightIcon className="h-3.5 w-3.5 text-secondary group-hover/link:text-link transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
-                </a>
-              </div>
 
-              {STEPS[activeIndex].desc ? (
-                <p className="mt-2.5 text-xs leading-relaxed text-secondary sm:text-sm">
-                  {STEPS[activeIndex].desc}
-                </p>
-              ) : null}
+                {STEPS[activeIndex].desc ? (
+                  <p className="mt-2.5 text-xs leading-relaxed text-secondary sm:text-sm">
+                    {STEPS[activeIndex].desc}
+                  </p>
+                ) : null}
 
-              {/* Companion Component */}
-              <div className="mt-3">
-                {renderCompanion(activeIndex)}
+                {/* Companion Component */}
+                <div className="mt-3">
+                  {renderCompanion(activeIndex)}
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
       )}
     </section>

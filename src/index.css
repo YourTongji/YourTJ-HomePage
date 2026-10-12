@@ -73,6 +73,34 @@
   /* Focus */
   --focus-ring: #078644; /* Brand/700: >= 3:1 against page white */
 
+  /*
+   * shadcn/ui theme contract (see components.json). The primitives in
+   * src/components/ui read these semantic names; each is bound to the design
+   * token that already plays that role, so both schemes follow automatically
+   * and adopting the contract changes no pixel. Channels only, consumed as
+   * rgb(var(--name) / <alpha>) through tailwind.config.cjs.
+   */
+  --background: var(--background-page-rgb);
+  --foreground: var(--text-primary-rgb);
+  --card: var(--background-surface-raised-rgb);
+  --card-foreground: var(--text-primary-rgb);
+  --popover: var(--background-page-rgb);
+  --popover-foreground: var(--text-primary-rgb);
+  --primary: var(--action-primary-rgb);
+  --primary-foreground: var(--text-on-action-rgb);
+  --secondary: var(--background-surface-rgb);
+  --secondary-foreground: var(--text-primary-rgb);
+  --muted: var(--background-surface-subtle-rgb);
+  --muted-foreground: var(--text-secondary-rgb);
+  --accent: var(--background-surface-rgb);
+  --accent-foreground: var(--text-primary-rgb);
+  --destructive: 220 38 38; /* red-600 */
+  --destructive-foreground: 255 255 255;
+  --border: var(--border-default-rgb);
+  --input: var(--border-default-rgb);
+  --ring: 7 134 68; /* = --focus-ring */
+  --radius: 0.5rem;
+
   --nav-highlight: rgba(255 255 255 / 0.65);
   --glass-highlight: rgba(255 255 255 / 0.7);
   --glass-lowlight: rgba(0 0 0 / 0.06);
@@ -156,6 +184,10 @@ html.dark {
   --icon-accent-rgb: 114 240 166;
   /* Focus */
   --focus-ring: #72f0a6; /* Brand/300: high visibility on near-black */
+
+  /* shadcn/ui contract: only the two literal values differ by scheme. */
+  --destructive: 248 113 113; /* red-400 */
+  --ring: 114 240 166; /* = --focus-ring */
 
   --nav-highlight: rgba(255 255 255 / 0.07);
   --glass-highlight: rgba(255 255 255 / 0.12);
@@ -282,6 +314,38 @@ html.dark {
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.1),
       var(--shadow-lg);
+  }
+
+  /*
+   * Hover cards rise into place and sink away on close; Radix keeps the
+   * content mounted until the exit animation ends.
+   */
+  .hover-card-motion[data-state='open'] {
+    animation: hover-card-in 200ms ease-out;
+  }
+
+  .hover-card-motion[data-state='closed'] {
+    animation: hover-card-out 200ms ease-out forwards;
+  }
+
+  @keyframes hover-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.95);
+    }
+  }
+
+  @keyframes hover-card-out {
+    to {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.95);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hover-card-motion[data-state] {
+      animation: none;
+    }
   }
 
   /*
@@ -969,9 +1033,10 @@ html.dark {
    * light and dark get separate recipes - pigment on paper versus luminosity on
    * near-black - instead of one inverted layer reused for both.
    *
-   * Paint cost: animating background-position repaints the layer every frame,
-   * so the field is capped in height and pinned with `contain: strict` to keep
-   * that repaint away from the rest of the page.
+   * Paint cost: the travelling layer moves by transform, not by
+   * background-position, so the drift is composited and never repaints the
+   * field. The field is still capped in height and pinned with
+   * `contain: strict` so the blend stays local to it.
    */
   .spectrum-field {
     position: absolute;
@@ -1016,8 +1081,14 @@ html.dark {
   .spectrum-field::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background-repeat: repeat;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background-repeat: repeat-x;
+  }
+
+  .spectrum-field::before {
+    right: 0;
   }
 
   /*
@@ -1028,16 +1099,11 @@ html.dark {
    * tile boundary - which is what a hard edge in the middle of a soft wash
    * actually is.
    *
-   * Sizing rule for everything below: tile = 200%, cycle = 50% of the gradient
-   * line. That makes the period equal exactly one viewport width, the tile two
-   * periods, and the animated distance (3 x (element - tile)) three periods -
-   * so neither the tiling nor the end of the loop can show.
-   *
-   * Speed is then set by the tile multiple, not by the duration: distance per
-   * loop = 3 x width. At 90s that is ~48px/s at 1440px wide, which is what the
-   * reference site travels (its 90s loop moves a 200% tile over the same
-   * three-width distance). Bigger tiles travel further per loop, which is what
-   * made the earlier 500% version feel nearly four times too quick.
+   * Sizing rule for everything below: tile = two field widths, cycle = 50% of
+   * the gradient line, so one band period is exactly one field width. The
+   * travelling layer is three widths wide and slides one period per 30s:
+   * ~48px/s at 1440px wide, the speed of the reference site, and seamless
+   * because the first and last frames match.
    */
   .spectrum-field::before {
     background-image: repeating-linear-gradient(
@@ -1083,19 +1149,17 @@ html.dark {
         var(--spectrum-b) 43%,
         var(--spectrum-a) 50%
       );
-    background-size: 200% 100%, 200% 100%;
-    background-position: 50% 50%, 50% 50%;
+    width: 300%;
+    background-size: calc(200% / 3) 100%;
     mix-blend-mode: var(--spectrum-phase-blend);
-    animation: spectrum-phase 90s linear infinite;
-    will-change: background-position;
+    transform: translate3d(calc(-100% / 6), 0, 0);
+    animation: spectrum-drift 30s linear infinite;
+    will-change: transform;
   }
 
-  @keyframes spectrum-phase {
-    from {
-      background-position: 50% 50%, 50% 50%;
-    }
+  @keyframes spectrum-drift {
     to {
-      background-position: 350% 50%, 350% 50%;
+      transform: translate3d(calc(-100% / 2), 0, 0);
     }
   }
 

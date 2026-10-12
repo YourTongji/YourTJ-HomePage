@@ -5,6 +5,7 @@ import { useTheme } from '../hooks/useTheme';
 import { CommunityLink } from '../types';
 import { ExternalLinkIcon, GithubIcon, MailIcon, QQIcon, TelegramIcon } from './icons';
 import { Reveal } from './Reveal';
+import { Card, CardEffects } from '@/components/ui/card';
 
 const renderCommunityIcon = (icon: CommunityLink['icon'], theme: 'light' | 'dark') => {
   switch (icon) {
@@ -42,16 +43,14 @@ const getBadgeClasses = (icon: CommunityLink['icon'], isDark: boolean) => {
   }
 };
 
+const ROW_CLASS = 'flex min-h-[72px] items-center gap-3.5 overflow-hidden px-4 py-3';
+
 const CommunityCard: React.FC<{ link: CommunityLink; theme: 'light' | 'dark' }> = ({
   link,
   theme,
 }) => {
   const { t } = useI18n();
   const isDark = theme === 'dark';
-  const baseClassName =
-    'glass-card group relative flex min-h-[72px] items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3';
-  const enabledClassName = `${baseClassName} transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-brand/35 hover:shadow-lift active:translate-y-0 active:scale-[0.96]`;
-
   const body = (
     <>
       <span
@@ -76,19 +75,19 @@ const CommunityCard: React.FC<{ link: CommunityLink; theme: 'light' | 'dark' }> 
 
   if (link.href) {
     return (
-      <a href={link.href} target="_blank" rel="noopener noreferrer" className={enabledClassName}>
-        {body}
-        <span aria-hidden="true" className="card-aura" />
-        <span aria-hidden="true" className="edge-runner" />
-        <span aria-hidden="true" className="card-sheen" />
-      </a>
+      <Card asChild interactive className={ROW_CLASS}>
+        <a href={link.href} target="_blank" rel="noopener noreferrer">
+          {body}
+          <CardEffects />
+        </a>
+      </Card>
     );
   }
 
   return (
-    <div className={baseClassName} role="group" aria-disabled="true" tabIndex={-1}>
+    <Card className={ROW_CLASS} role="group" aria-disabled="true" tabIndex={-1}>
       {body}
-    </div>
+    </Card>
   );
 };
 
