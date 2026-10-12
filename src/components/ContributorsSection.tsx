@@ -6,6 +6,8 @@ import { ShinyText } from './ShinyText';
 import { LogoLoop, type LogoItem } from './LogoLoop';
 import { Reveal } from './Reveal';
 import { ArrowUpRightIcon, GithubIcon } from './icons';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 interface Committer {
   login: string;
@@ -112,7 +114,7 @@ export const ContributorsSection: React.FC = () => {
         href: c.htmlUrl,
         ariaLabel: `${c.name} on GitHub`,
         node: (
-          <div className="group/committer relative flex items-center gap-2.5 rounded-full border border-edge/80 bg-surface/70 py-1.5 pl-1.5 pr-3.5 shadow-xs backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-surface-raised hover:shadow-lift active:scale-[0.96]">
+          <div className="group/committer relative flex items-center gap-2.5 rounded-full border border-edge/80 bg-surface/70 py-1.5 pl-1.5 pr-3.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-surface-raised hover:shadow-lift active:scale-[0.96]">
             {/* Concentric circular avatar container with zero distortion */}
             <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-edge/90 bg-surface-subtle overflow-hidden">
               <img
@@ -236,50 +238,52 @@ export const ContributorsSection: React.FC = () => {
           </div>
 
           {/* Row 2: Synergy Card */}
-          <a
-            href="https://github.com/SII-Holos/synergy"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Synergy - Autonomous Software Development by SII-Holos"
-            className="glass-card group w-full relative flex items-center justify-between gap-4 rounded-2xl border border-edge/80 bg-surface/60 p-3.5 sm:p-4 shadow-lift backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-xl active:scale-[0.98]"
+          <Card
+            asChild
+            className="w-full flex items-center justify-between gap-4 border border-edge/80 bg-surface/60 p-3.5 sm:p-4 shadow-lift backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-xl active:scale-[0.98]"
           >
-            <div className="flex items-center gap-3.5 min-w-0">
-              {/* Synergy Agent Avatar: clean concentric rounded-xl, no AI badge */}
-              <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-edge/80 bg-surface-subtle p-0.5 shadow-xs transition-transform duration-200 group-hover:scale-105">
-                <img
-                  src={import.meta.env.DEV ? 'https://github.com/synergy-agent.png' : `/.netlify/images?url=${encodeURIComponent('https://github.com/synergy-agent.png')}&w=88&h=88&fit=cover&q=85`}
-                  alt="Synergy Agent"
-                  width={44}
-                  height={44}
-                  className="h-full w-full rounded-[10px] object-cover block"
-                  loading="eager"
-                  decoding="async"
-                />
-              </div>
-
-              {/* Title and Tagline */}
-              <div className="min-w-0 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm sm:text-base font-semibold tracking-tight text-primary">
-                    Synergy
-                  </span>
-                  <span className="inline-flex items-center rounded-md border border-edge/70 bg-surface-raised px-1.5 py-0.5 text-[10px] font-medium text-secondary">
-                    SII-Holos
-                  </span>
+            <a
+              href="https://github.com/SII-Holos/synergy"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Synergy - Autonomous Software Development by SII-Holos"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                {/* Synergy Agent Avatar: clean concentric rounded-xl, no AI badge */}
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-edge/80 bg-surface-subtle p-0.5 shadow-xs transition-transform duration-200 group-hover:scale-105">
+                  <img
+                    src={import.meta.env.DEV ? 'https://github.com/synergy-agent.png' : `/.netlify/images?url=${encodeURIComponent('https://github.com/synergy-agent.png')}&w=88&h=88&fit=cover&q=85`}
+                    alt="Synergy Agent"
+                    width={44}
+                    height={44}
+                    className="h-full w-full rounded-[10px] object-cover block"
+                    loading="eager"
+                    decoding="async"
+                  />
                 </div>
-                <p className="mt-0.5 text-xs text-secondary truncate">
-                  {t('contributors.synergy.desc')}
-                </p>
-              </div>
-            </div>
 
-            {/* Action link */}
-            <span className="inline-flex items-center gap-1.5 shrink-0 rounded-xl border border-edge/80 bg-surface-raised/90 px-3 py-1.5 text-xs font-medium text-secondary transition-all duration-200 group-hover:border-edge-strong group-hover:text-primary">
-              <GithubIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">SII-Holos / synergy</span>
-              <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </span>
-          </a>
+                {/* Title and Tagline */}
+                <div className="min-w-0 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-semibold tracking-tight text-primary">
+                      Synergy
+                    </span>
+                    <Badge variant="tag">SII-Holos</Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-secondary truncate">
+                    {t('contributors.synergy.desc')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action link */}
+              <span className="inline-flex items-center gap-1.5 shrink-0 rounded-xl border border-edge/80 bg-surface-raised/90 px-3 py-1.5 text-xs font-medium text-secondary transition-all duration-200 group-hover:border-edge-strong group-hover:text-primary">
+                <GithubIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">SII-Holos / synergy</span>
+                <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </span>
+            </a>
+          </Card>
         </Reveal>
       </div>
     </section>

@@ -2,6 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import './TechText.css';
 
 const LABEL_FONT = '10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+/*
+ * The unattended sweep is slow, so it is drawn at 30fps; pointer interaction
+ * (hover, drag) gets every frame so the glyphs stay glued to the cursor.
+ */
+const SWEEP_FRAME_MS = 1000 / 30;
 const FALLOFF_STEPS = 8;
 const SPRING = 320;
 const DAMPING = 22;
@@ -185,6 +190,8 @@ export const TechText: React.FC<TechTextProps> = ({
     let height = 1;
     let dpr = 1;
     let raf = 0;
+    let timer = 0;
+    let cursor = '';
     let last = performance.now();
     let visible = true;
     let alive = true;
@@ -747,7 +754,13 @@ export const TechText: React.FC<TechTextProps> = ({
         else glyph.outline = target;
       });
 
-      if (s.draggable) container.style.cursor = dragging >= 0 ? 'grabbing' : focus >= 0 && pointer.inside ? 'grab' : '';
+      if (s.draggable) {
+        const nextCursor = dragging >= 0 ? 'grabbing' : focus >= 0 && pointer.inside ? 'grab' : '';
+        if (nextCursor !== cursor) {
+          cursor = nextCursor;
+          container.style.cursor = nextCursor;
+        }
+      }
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
@@ -778,11 +791,26 @@ export const TechText: React.FC<TechTextProps> = ({
         moving ||
         Math.abs(presence - (s.reveal === 'area' && active && dragging < 0 ? 1 : 0)) > 0.002 ||
         (frame.alpha > 0.01 && frame.alpha < 0.99);
-      if ((active || settling) && visible && alive) raf = requestAnimationFrame(tick);
+      if (!(active || settling) || !visible || !alive) return;
+      if (pointer.inside || dragging >= 0 || settling) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        // Hold the rAF slot so wake() does not double-schedule while waiting.
+        raf = -1;
+        timer = window.setTimeout(() => {
+          raf = requestAnimationFrame(tick);
+        }, Math.max(0, SWEEP_FRAME_MS - (performance.now() - now)));
+      }
     };
 
     const wake = () => {
-      if (raf || !visible || !alive) return;
+      if (!visible || !alive) return;
+      if (raf === -1) {
+        // Interaction during a throttled wait: draw on the next frame instead.
+        window.clearTimeout(timer);
+        raf = 0;
+      }
+      if (raf) return;
       last = performance.now();
       raf = requestAnimationFrame(tick);
     };
@@ -866,6 +894,7 @@ export const TechText: React.FC<TechTextProps> = ({
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
       wakeRef.current = () => {};
       resizeObserver.disconnect();
       intersectionObserver.disconnect();

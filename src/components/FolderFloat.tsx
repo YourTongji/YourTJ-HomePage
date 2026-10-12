@@ -158,9 +158,18 @@ interface WorldState {
   last: number;
   t0: number;
   drag: DragState | null;
+  /** Until this time the simulation steps every frame (a drag just ended and pills may still be flying). */
+  busyUntil: number;
   zone: { left: number; right: number; top: number; bottom: number } | null;
   live: boolean;
 }
+
+/*
+ * The idle drift is slow, so between drags the simulation steps at 30fps; while
+ * a pill is held, and for a moment after it is thrown, it steps every frame.
+ */
+const IDLE_STEP_MS = 1000 / 30;
+const BUSY_AFTER_DRAG_MS = 1500;
 
 export const FolderFloat: React.FC<FolderFloatProps> = ({
   items = DEFAULT_ITEMS,
@@ -210,6 +219,7 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     last: 0,
     t0: 0,
     drag: null,
+    busyUntil: 0,
     zone: null,
     live: false,
   });
@@ -359,6 +369,10 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     const tick = (now: number) => {
       const s = world.current;
       if (!s.engine) return;
+      if (!s.drag && now > s.busyUntil && s.last && now - s.last < IDLE_STEP_MS - 1) {
+        s.raf = requestAnimationFrame(tick);
+        return;
+      }
       const dt = s.last ? Math.min(32, now - s.last) : 16;
       s.last = now;
       const t = (now - s.t0) / 1000;
@@ -497,6 +511,7 @@ export const FolderFloat: React.FC<FolderFloatProps> = ({
     const d = w.drag;
     if (!d || d.i !== i || d.id !== e.pointerId) return;
     w.drag = null;
+    w.busyUntil = performance.now() + BUSY_AFTER_DRAG_MS;
     e.currentTarget.removeAttribute('data-drag');
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);

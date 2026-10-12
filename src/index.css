@@ -285,6 +285,38 @@ html.dark {
   }
 
   /*
+   * Hover cards rise into place and sink away on close; Radix keeps the
+   * content mounted until the exit animation ends.
+   */
+  .hover-card-motion[data-state='open'] {
+    animation: hover-card-in 200ms ease-out;
+  }
+
+  .hover-card-motion[data-state='closed'] {
+    animation: hover-card-out 200ms ease-out forwards;
+  }
+
+  @keyframes hover-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.95);
+    }
+  }
+
+  @keyframes hover-card-out {
+    to {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.95);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hover-card-motion[data-state] {
+      animation: none;
+    }
+  }
+
+  /*
    * Web approximation of frosted material. Not Apple-issued Liquid Glass;
    * uses layered translucency, blur and inner edge refraction.
    */
@@ -969,9 +1001,10 @@ html.dark {
    * light and dark get separate recipes - pigment on paper versus luminosity on
    * near-black - instead of one inverted layer reused for both.
    *
-   * Paint cost: animating background-position repaints the layer every frame,
-   * so the field is capped in height and pinned with `contain: strict` to keep
-   * that repaint away from the rest of the page.
+   * Paint cost: the travelling layer moves by transform, not by
+   * background-position, so the drift is composited and never repaints the
+   * field. The field is still capped in height and pinned with
+   * `contain: strict` so the blend stays local to it.
    */
   .spectrum-field {
     position: absolute;
@@ -1016,8 +1049,14 @@ html.dark {
   .spectrum-field::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background-repeat: repeat;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background-repeat: repeat-x;
+  }
+
+  .spectrum-field::before {
+    right: 0;
   }
 
   /*
@@ -1028,16 +1067,11 @@ html.dark {
    * tile boundary - which is what a hard edge in the middle of a soft wash
    * actually is.
    *
-   * Sizing rule for everything below: tile = 200%, cycle = 50% of the gradient
-   * line. That makes the period equal exactly one viewport width, the tile two
-   * periods, and the animated distance (3 x (element - tile)) three periods -
-   * so neither the tiling nor the end of the loop can show.
-   *
-   * Speed is then set by the tile multiple, not by the duration: distance per
-   * loop = 3 x width. At 90s that is ~48px/s at 1440px wide, which is what the
-   * reference site travels (its 90s loop moves a 200% tile over the same
-   * three-width distance). Bigger tiles travel further per loop, which is what
-   * made the earlier 500% version feel nearly four times too quick.
+   * Sizing rule for everything below: tile = two field widths, cycle = 50% of
+   * the gradient line, so one band period is exactly one field width. The
+   * travelling layer is three widths wide and slides one period per 30s:
+   * ~48px/s at 1440px wide, the speed of the reference site, and seamless
+   * because the first and last frames match.
    */
   .spectrum-field::before {
     background-image: repeating-linear-gradient(
@@ -1083,19 +1117,17 @@ html.dark {
         var(--spectrum-b) 43%,
         var(--spectrum-a) 50%
       );
-    background-size: 200% 100%, 200% 100%;
-    background-position: 50% 50%, 50% 50%;
+    width: 300%;
+    background-size: calc(200% / 3) 100%;
     mix-blend-mode: var(--spectrum-phase-blend);
-    animation: spectrum-phase 90s linear infinite;
-    will-change: background-position;
+    transform: translate3d(calc(-100% / 6), 0, 0);
+    animation: spectrum-drift 30s linear infinite;
+    will-change: transform;
   }
 
-  @keyframes spectrum-phase {
-    from {
-      background-position: 50% 50%, 50% 50%;
-    }
+  @keyframes spectrum-drift {
     to {
-      background-position: 350% 50%, 350% 50%;
+      transform: translate3d(calc(-100% / 2), 0, 0);
     }
   }
 
