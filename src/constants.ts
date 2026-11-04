@@ -50,7 +50,7 @@ export const PREVIEW_SLIDES: PreviewSlide[] = [
  * App Store / Play URLs once the store builds are live.
  */
 export const APP_LINKS: AppLinkConfig = {
-  iosTestflight: 'https://apps.apple.com/us/app/yourtj/id6809457637?platform=vision',
+  iosTestflight: 'https://testflight.apple.com/join/eSYRT7ut',
   iosIssues: 'https://github.com/YourTongji/YourTJ-Hub/issues',
   androidAcceleratedApk:
     'https://github.com/YourTongji/YourTJ-Hub/releases/download/mobile-latest/YourTJ-arm64-v8a.apk',
